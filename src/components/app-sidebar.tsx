@@ -1,12 +1,8 @@
 import {
-  Calendar,
   Cloud,
   Home,
-  Inbox,
   Landmark,
   Rat,
-  Search,
-  Settings,
   TrendingUpDown,
   User,
 } from "lucide-react";
@@ -61,7 +57,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
+          <SidebarGroupLabel>AgriSmart</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
@@ -69,7 +65,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <a href={item.url}>
                       <item.icon />
-                      <span>{item.title}</span>
+                      <span className="text-base">{item.title}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

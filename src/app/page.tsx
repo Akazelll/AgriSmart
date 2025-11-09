@@ -7,8 +7,6 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import Link from "next/link";
-import { LoginButton } from "@/components/login-button";
-
 
 export default function Home() {
   return (
@@ -28,7 +26,9 @@ export default function Home() {
               meningkatkan keputusan budidaya petani kecil
             </p>
             <div className='mt-10 flex justify-center gap-x-6'>
-              <LoginButton />
+              <a href='/dashboard'>
+                <Button variant='outline'>Login</Button>
+              </a>
             </div>
           </div>
         </section>
