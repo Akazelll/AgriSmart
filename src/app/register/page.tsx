@@ -1,66 +1,13 @@
-import { createClient } from "@supabase/supabase-js";
-import bcrypt from "bcrypt";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-export async function registerUser(formData: FormData) {
-  const name = formData.get("name") as string;
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-  const confirmPassword = formData.get("confirmPassword") as string;
-
-  if (!name || !email || !password) {
-    return { error: "Mohon isi semua kolom" };
-  }
-
-  if (password !== confirmPassword) {
-    return { error: "Password dan konfirmasi tidak cocok" };
-  }
-
-  try {
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .single();
-
-    if (existingUser) {
-      return { error: "Email sudah terdaftar!" };
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const { error } = await supabase.from("users").insert({
-      name,
-      email,
-      password: hashedPassword,
-      emailVerified: null,
-    });
-
-    if (error) {
-      console.error("Supabase insert error:", error);
-      return { error: "Gagal mendaftar ke database" };
-    }
-
-    return { success: true };
-  } catch (err) {
-    console.error("Register error:", err);
-    return { error: "Terjadi kesalahan server" };
-  }
-}
+import { registerUser } from "@/app/actions/register";
 
 export default function RegisterPage() {
   return (
@@ -73,7 +20,7 @@ export default function RegisterPage() {
         </CardHeader>
 
         <CardContent className='space-y-4'>
-          <form className='space-y-6'>
+          <form action={registerUser} className='space-y-6'>
             <div className='flex flex-col gap-4'>
               <div className='grid gap-2'>
                 <Label htmlFor='name' className='px-4'>
@@ -115,13 +62,14 @@ export default function RegisterPage() {
                   className='rounded-3xl shadow-lg'
                 />
                 <div className='flex justify-start px-4'>
-                  <span className='text-xs font-small text-muted-foreground'>
-                    Ketentuan: Minimal 8 karakter.
+                  <span className='text-xs font-small text-dark'>
+                    Ketentuan : 8 - 100 karakter. Mengandung huruf (a-z), angka
+                    (0-9), huruf besar, huruf kecil, dan simbol (*&^%$#@!, dan
+                    lain-lain)
                   </span>
                 </div>
               </div>
 
-              {/* Konfirmasi Password (Opsional tapi disarankan) */}
               <div className='grid gap-2'>
                 <Label htmlFor='confirmPassword' className='px-4'>
                   Konfirmasi Password
@@ -146,18 +94,6 @@ export default function RegisterPage() {
             </div>
           </form>
         </CardContent>
-
-        <CardFooter className='flex justify-center pb-6'>
-          <p className='text-sm text-muted-foreground'>
-            Sudah punya akun?{" "}
-            <a
-              href='/login'
-              className='text-emerald-600 font-medium hover:underline'
-            >
-              Masuk
-            </a>
-          </p>
-        </CardFooter>
       </Card>
     </div>
   );

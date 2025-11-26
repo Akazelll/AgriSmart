@@ -10,6 +10,8 @@ import {
 import { FcGoogle } from "react-icons/fc";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AuthError } from "next-auth"; // Import untuk error handling (opsional)
+import { redirect } from "next/navigation";
 
 export default function LoginPage() {
   return (
@@ -25,7 +27,20 @@ export default function LoginPage() {
           <form
             action={async (formData) => {
               "use server";
-              await signIn("credentials", formData);
+              try {
+                await signIn("credentials", {
+                  email: formData.get("email"),
+                  password: formData.get("password"),
+                  redirectTo: "/dashboard", // [PENTING] Arahkan ke dashboard
+                });
+              } catch (error) {
+                // Perlu me-rethrow error agar redirect Next.js bekerja
+                if (error instanceof AuthError) {
+                  // Di sini Anda bisa log error atau return message jika mengubah ke useFormState
+                  console.error("Login failed:", error.type);
+                }
+                throw error;
+              }
             }}
             className='space-y-6'
           >

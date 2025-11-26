@@ -94,7 +94,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className='grow flex flex-col items-center justify-center pt-20 pb-20 text-center px-4'></main>
+      <main className='grow flex flex-col items-center justify-center pt-20 pb-20 text-center px-4 py-16'></main>
 
       <div
         className='w-full max-w-6xl mx-auto px-4 py-16 flex flex-col items-center'
