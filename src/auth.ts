@@ -1,17 +1,20 @@
+// src/auth.ts
 import NextAuth from "next-auth";
+import { authConfig } from "./auth.config"; // Import config yang baru dibuat
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { SupabaseAdapter } from "@auth/supabase-adapter";
 import { createClient } from "@supabase/supabase-js";
 import bcrypt from "bcrypt";
 
-// Client Supabase untuk Auth (Hanya membaca data user)
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig, // Gunakan konfigurasi dasar
+  // Tambahkan Adapter & Provider di sini (Hanya jalan di Server/Node.js)
   adapter: SupabaseAdapter({
     url: process.env.SUPABASE_URL!,
     secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -32,34 +35,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!email || !password) return null;
 
-        // 1. Cari user berdasarkan email
         const { data: user } = await supabase
           .from("users")
           .select("*")
           .eq("email", email)
           .single();
 
-        if (!user) return null; // User tidak ditemukan
-
-        // 2. Cek Password (jika user punya password)
-        if (!user.password) return null; // User mungkin login via Google sebelumnya
+        if (!user || !user.password) return null;
 
         const passwordsMatch = await bcrypt.compare(password, user.password);
 
-        if (passwordsMatch) {
-          // Login Berhasil
-          return user;
-        }
+        if (passwordsMatch) return user;
 
-        console.log("Password salah");
         return null;
       },
     }),
   ],
-  pages: {
-    signIn: "/login",
-  },
-  session: {
-    strategy: "jwt", // Credentials wajib pakai strategy JWT
-  },
 });
