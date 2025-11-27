@@ -57,7 +57,7 @@ export default function Home() {
           <Link href='/' className='flex items-center gap-2'>
             <div className='relative h-10 w-auto flex-shrink-0'>
               <Image
-                src='/img/TULISAN 2.png'
+                src='/img/logo2.png'
                 alt='Logo AgriSmart'
                 width={150}
                 height={40}
