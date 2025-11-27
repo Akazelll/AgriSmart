@@ -10,6 +10,11 @@ import { Label } from "@/components/ui/label";
 import { registerUser } from "@/app/actions/register";
 
 export default function RegisterPage() {
+  async function handleRegister(formData:FormData) {
+    "use server";
+    await registerUser(formData);
+  }
+  
   return (
     <div className='flex h-screen items-center justify-center'>
       <Card className='w-full max-w-md rounded-4xl max-h-xl drop-shadow-2xl shadow-[0_0_20px_rgba(6,78,59,0.4)]'>
@@ -20,7 +25,7 @@ export default function RegisterPage() {
         </CardHeader>
 
         <CardContent className='space-y-4'>
-          <form action={registerUser} className='space-y-6'>
+          <form action={handleRegister} className='space-y-6'>
             <div className='flex flex-col gap-4'>
               <div className='grid gap-2'>
                 <Label htmlFor='name' className='px-4'>

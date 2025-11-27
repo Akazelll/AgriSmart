@@ -10,10 +10,16 @@ import {
 import { FcGoogle } from "react-icons/fc";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AuthError } from "next-auth"; // Import untuk error handling (opsional)
+import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+
   return (
     <div className='flex h-screen items-center justify-center'>
       <Card className='w-full max-w-md rounded-4xl drop-shadow-2xl shadow-[0_0_20px_rgba(6,78,59,0.4)]'>
@@ -24,6 +30,12 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent className='space-y-4'>
+          {error === "CredentialsSignin" && (
+            <div className='p-3 bg-red-100 border border-red-300 text-red-600 text-sm rounded-md text-center'>
+              Email atau Password salah. Silakan coba lagi.
+            </div>
+          )}
+
           <form
             action={async (formData) => {
               "use server";
@@ -31,15 +43,19 @@ export default function LoginPage() {
                 await signIn("credentials", {
                   email: formData.get("email"),
                   password: formData.get("password"),
-                  redirectTo: "/dashboard", // [PENTING] Arahkan ke dashboard
+                  redirectTo: "/dashboard",
                 });
-              } catch (error) {
-                // Perlu me-rethrow error agar redirect Next.js bekerja
-                if (error instanceof AuthError) {
-                  // Di sini Anda bisa log error atau return message jika mengubah ke useFormState
-                  console.error("Login failed:", error.type);
+              } catch (err) {
+                if (err instanceof AuthError) {
+                  switch (err.type) {
+                    case "CredentialsSignin":
+                      return redirect("/login?error=CredentialsSignin");
+                    default:
+                      console.error("Login error:", err);
+                      return redirect("/login?error=Default");
+                  }
                 }
-                throw error;
+                throw err;
               }
             }}
             className='space-y-6'
@@ -53,7 +69,7 @@ export default function LoginPage() {
                   id='email'
                   name='email'
                   type='email'
-                  className='rounded-3xl'
+                  className='rounded-3xl drop-shadow-2xl shadow-[0_0_20px_rgba(6,78,59,0.4)]'
                   required
                 />
               </div>
@@ -66,7 +82,7 @@ export default function LoginPage() {
                   name='password'
                   type='password'
                   required
-                  className='rounded-3xl shadow-lg'
+                  className='rounded-3xl drop-shadow-2xl shadow-[0_0_20px_rgba(6,78,59,0.4)]'
                 />
                 <div className='flex justify-start'>
                   <a
@@ -82,7 +98,7 @@ export default function LoginPage() {
             <div className='flex justify-center w-full'>
               <Button
                 type='submit'
-                className='w-24 rounded-full bg-[#3A6F43] hover:bg-emerald-800 font-semibold shadow-md transition-all hover:scale-105'
+                className='w-24 rounded-full bg-[#3A6F43] hover:bg-emerald-800 font-semibold shadow-md transition-all hover:scale-105 '
               >
                 Masuk
               </Button>
@@ -106,12 +122,7 @@ export default function LoginPage() {
             }}
           >
             <div className='flex justify-center w-full'>
-              <Button
-                variant='outline'
-                type='submit'
-                className='w-56 rounded-full shadow-sm transition-all hover:scale-105'
-              >
-                {" "}
+              <Button variant='outline' type='submit' className='rounded-full'>
                 <FcGoogle className='w-5 h-5' />
                 Masuk dengan Google
               </Button>
