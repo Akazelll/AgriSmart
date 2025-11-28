@@ -40,37 +40,54 @@ export function MetricPill({
 
 export function ForecastCard({
   item,
-  isFirst,
+  isFirst, // Prop ini bisa tetap ada jika parent mengirimnya, tapi tidak kita gunakan untuk styling lagi
 }: {
   item: ForecastItem;
   isFirst: boolean;
 }) {
   return (
     <Card
-      className={`min-w-[140px] snap-start border-stone-200/60 dark:border-stone-800 ${
-        isFirst
-          ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200/50"
-          : "bg-white dark:bg-stone-900"
-      }`}
+      className='
+        snap-start 
+        shrink-0 
+        min-w-[140px] 
+        h-[220px] 
+        rounded-[3rem] 
+        border
+        transition-all
+        duration-300
+        bg-white 
+        border-stone-200/60 
+        shadow-sm
+        hover:shadow-md  /* Opsional: efek hover agar interaktif */
+      '
     >
-      <CardContent className='p-4 flex flex-col items-center text-center space-y-2'>
-        <p className='text-sm font-semibold text-stone-600 dark:text-stone-300'>
-          {new Date(item.dt * 1000).toLocaleTimeString("id-ID", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+      <CardContent className=' flex flex-col items-center justify-between h-full'>
+        <p className='text-3xl font-normal tracking-tighter text-stone-800'>
+          {new Date(item.dt * 1000)
+            .toLocaleTimeString("id-ID", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+            }
         </p>
-        <img
-          src={`https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`}
-          alt={item.weather[0].description}
-          className='w-14 h-14 -my-1'
-        />
-        <p className='text-xl font-bold text-stone-800 dark:text-stone-100'>
-          {Math.round(item.main.temp)}°
-        </p>
-        <div className='flex items-center gap-1 text-xs text-stone-400'>
-          <Droplets size={12} /> {Math.round(item.pop * 100)}%
+        <div className='flex flex-col items-center gap-2'>
+          <div className='relative w-20 h-20 flex items-center justify-center'>
+            <img
+              src={`https://openweathermap.org/img/wn/${item.weather[0].icon}@4x.png`}
+              alt={item.weather[0].description}
+              className='w-full h-full object-contain drop-shadow-md'
+            />
+          </div>
+
+          <p className='text-sm font-normal text-dark capitalize text-center '>
+            {item.weather[0].description}
+          </p>
         </div>
+        <p className='text-3xl font-normal tracking-tight text-stone-800'>
+          {Math.round(item.main.temp)}
+          <span className='text-2xl align-top ml-1'></span>
+        </p>
       </CardContent>
     </Card>
   );
