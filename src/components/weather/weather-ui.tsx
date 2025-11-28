@@ -1,33 +1,43 @@
-// src/components/weather/weather-ui.tsx
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Droplets } from "lucide-react";
 import { ForecastItem } from "@/types/weather";
+import { cn } from "@/lib/utils";
 
-// --- Metric Pill (Untuk Card Utama) ---
 export function MetricPill({
   icon,
   label,
   value,
+  className,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
+  className?: string;
 }) {
   return (
-    <div className='flex flex-col items-center p-2.5 bg-white/10 rounded-xl backdrop-blur-sm border border-white/5'>
-      <div className='text-emerald-200 mb-1'>{icon}</div>
-      <div className='text-xs text-emerald-100/70 uppercase tracking-wider font-semibold'>
-        {label}
+    <div
+      className={cn(
+        "flex flex-row items-center justify-center px-4 py-2 bg-white/34 rounded-full backdrop-blur-md border border-white/10 shadow-sm w-full",
+        className
+      )}
+    >
+      <div className='text-white mr-3 shrink-0 drop-shadow-sm'>{icon}</div>
+
+      <div className='flex flex-col items-start'>
+        <span className='text-[11px] text-white capitalize tracking-wider font-normal leading-tight mb-0.5 drop-shadow-sm'>
+          {label}
+        </span>
+        <span className='font-normal text-2xl text-white leading-none drop-shadow-md'>
+          {value}
+        </span>
       </div>
-      <div className='font-bold'>{value}</div>
     </div>
   );
 }
 
-// --- Forecast Card (Kartu Prakiraan) ---
 export function ForecastCard({
   item,
   isFirst,
@@ -66,7 +76,6 @@ export function ForecastCard({
   );
 }
 
-// --- Detail Card Small (Grid Details) ---
 export function DetailCardSmall({
   title,
   icon,
@@ -93,10 +102,9 @@ export function DetailCardSmall({
   );
 }
 
-// --- Loading Skeleton ---
 export function ProfessionalSkeleton() {
   return (
-    <div className='p-6 space-y-8 min-h-screen bg-[#f4f5f0] dark:bg-[#0c0c0c]'>
+    <div className='p-6 space-y-8 min-h-screen bg-[#f4f5f0] dark:bg-[#0c0c0c] rounded-4xl'>
       <Skeleton className='h-10 w-1/3' />
       <div className='grid lg:grid-cols-12 gap-6'>
         <div className='lg:col-span-8 space-y-6'>
@@ -116,7 +124,6 @@ export function ProfessionalSkeleton() {
   );
 }
 
-// --- Error State ---
 export function ProfessionalError({ message }: { message: string }) {
   return (
     <div className='flex h-[60vh] w-full items-center justify-center p-6'>

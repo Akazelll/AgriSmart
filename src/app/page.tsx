@@ -9,6 +9,7 @@ import {
   Droplets,
   ShieldAlert,
 } from "lucide-react";
+import { auth } from "@/auth";
 
 const features = [
   {
@@ -43,7 +44,9 @@ const features = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
   const navLinks = [
     { name: "Home", href: "/" },
     { name: "Fitur", href: "#fitur" },
@@ -79,12 +82,20 @@ export default function Home() {
                 </Link>
               ))}
             </nav>
+            {session ? (
+              <Link href='/dashboard'>
+                <Button className='rounded-full bg-[#3A6F43] hover:bg-[#2c4d35] text-white px-8 py-2 font-semibold shadow-lg shadow-emerald-900/10 transition-all hover:scale-105'>
+                  Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <Link href='/login'>
+                <Button className='rounded-full bg-[#3A6F43] hover:bg-[#2c4d35] text-white px-8 py-2 font-semibold shadow-lg shadow-emerald-900/10 transition-all hover:scale-105'>
+                  Login
+                </Button>
+              </Link>
+            )}
 
-            <Link href='/login'>
-              <Button className='rounded-full bg-[#3A6F43] hover:bg-[#2c4d35] text-white px-8 py-2 font-semibold shadow-lg shadow-emerald-900/10 transition-all hover:scale-105'>
-                Login
-              </Button>
-            </Link>
           </div>
         </div>
       </header>

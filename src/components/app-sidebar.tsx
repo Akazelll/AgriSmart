@@ -5,6 +5,7 @@ import {
   Rat,
   TrendingUpDown,
   User,
+  LogOut,
 } from "lucide-react";
 
 import {
@@ -16,9 +17,11 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 
-// Menu items.
+import { signOut } from "@/auth";
+
 const items = [
   {
     title: "Home",
@@ -47,7 +50,7 @@ const items = [
   },
   {
     title: "Profil",
-    url: "profil",
+    url: "profile",
     icon: User,
   },
 ];
@@ -57,15 +60,17 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>AgriSmart</SidebarGroupLabel>
-          <SidebarGroupContent>
+          <SidebarGroupLabel className='text-lg text-dark'>
+            AgriSmart
+          </SidebarGroupLabel>
+          <SidebarGroupContent className='py-4'>
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <a href={item.url}>
                       <item.icon />
-                      <span className="text-base">{item.title}</span>
+                      <span className='text-2md text-dark'>{item.title}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -74,6 +79,27 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <form
+              action={async () => {
+                "use server";
+                await signOut({ redirectTo: "/login" });
+              }}
+            >
+              <SidebarMenuButton
+                type='submit'
+                className='text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30'
+              >
+                <LogOut />
+                <span className='text-base font-medium'>Keluar</span>
+              </SidebarMenuButton>
+            </form>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }

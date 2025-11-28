@@ -1,6 +1,6 @@
-import {DashboardShell} from "@/components/dashboard-shell";
+import { DashboardShell } from "@/components/dashboard-shell";
 
-export default function DashboardLayout({
+export default function PredictLayout({
   children,
 }: {
   children: React.ReactNode;

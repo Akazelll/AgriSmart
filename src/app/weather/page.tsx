@@ -1,4 +1,3 @@
-// src/app/weather/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -6,8 +5,6 @@ import dynamic from "next/dynamic";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Clock } from "lucide-react";
-
-// Imports dari komponen yang baru dibuat
 import { WeatherData, ForecastData } from "@/types/weather";
 import {
   ProfessionalSkeleton,
@@ -18,7 +15,6 @@ import { WeatherHeader } from "@/components/weather/weather-header";
 import { CurrentWeatherCard } from "@/components/weather/current-weather-card";
 import { WeatherDetailsGrid } from "@/components/weather/weather-details-grid";
 
-// Dynamic Import untuk Peta
 const WeatherMap = dynamic(() => import("@/components/weather-map"), {
   ssr: false,
   loading: () => <Skeleton className='h-full w-full rounded-2xl' />,
@@ -110,17 +106,14 @@ export default function WeatherPage() {
   if (!currentWeather || !forecast) return null;
 
   return (
-    <div className='min-h-screen w-full bg-[#f4f5f0] dark:bg-[#0c0c0c] p-4 md:p-6 lg:p-8 space-y-6'>
-      {/* 1. Header Component */}
+    <div className=' w-full min-h-screen bg-white/50 drop-shadow-2xl rounded-4xl  p-4 md:p-6 lg:p-8 space-y-6'>
       <WeatherHeader
         locationName={locationName || currentWeather.name}
         countryCode={currentWeather.sys.country}
       />
 
-      <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
-        {/* Kolom Kiri */}
+      <div className='grid grid-cols-1 lg:grid-cols-12 gap-20'>
         <div className='lg:col-span-8 space-y-6'>
-          {/* 2. Current Weather Card Component */}
           <CurrentWeatherCard data={currentWeather} />
 
           <section>
@@ -130,7 +123,6 @@ export default function WeatherPage() {
                 Prakiraan 24 Jam Kedepan
               </h2>
             </div>
-            {/* Forecast List - Bisa juga dipisah jadi komponen sendiri jika mau */}
             <div className='flex overflow-x-auto pb-4 -mx-1 px-1 gap-3 snap-x no-scrollbar'>
               {forecast.list.slice(0, 8).map((item, i) => (
                 <ForecastCard key={item.dt} item={item} isFirst={i === 0} />
@@ -139,19 +131,19 @@ export default function WeatherPage() {
           </section>
         </div>
 
-        {/* Kolom Kanan */}
         <div className='lg:col-span-4 space-y-6'>
-          <Card className='border-none shadow-md overflow-hidden rounded-2xl h-[300px] lg:h-[350px] relative z-0'>
-            {currentWeather.coord && (
-              <WeatherMap
-                lat={currentWeather.coord.lat}
-                lon={currentWeather.coord.lon}
-                locationName={locationName || currentWeather.name}
-              />
-            )}
+          <Card className='border-none shadow-xl bg-white p-3 rounded-[2.5rem] h-60 relative z-0'>
+            <div className='h-full w-full rounded-[2rem] overflow-hidden relative z-0'>
+              {currentWeather.coord && (
+                <WeatherMap
+                  lat={currentWeather.coord.lat}
+                  lon={currentWeather.coord.lon}
+                  locationName={locationName || currentWeather.name}
+                />
+              )}
+            </div>
           </Card>
 
-          {/* 3. Details Grid Component */}
           <WeatherDetailsGrid data={currentWeather} />
         </div>
       </div>
