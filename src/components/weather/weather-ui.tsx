@@ -40,7 +40,7 @@ export function MetricPill({
 
 export function ForecastCard({
   item,
-  isFirst, // Prop ini bisa tetap ada jika parent mengirimnya, tapi tidak kita gunakan untuk styling lagi
+  isFirst,
 }: {
   item: ForecastItem;
   isFirst: boolean;
@@ -48,45 +48,45 @@ export function ForecastCard({
   return (
     <Card
       className='
-        snap-start 
-        shrink-0 
-        min-w-[140px] 
+        w-[120px]
         h-[220px] 
-        rounded-[3rem] 
+        rounded-4xl 
         border
         transition-all
         duration-300
         bg-white 
         border-stone-200/60 
         shadow-sm
-        hover:shadow-md  /* Opsional: efek hover agar interaktif */
+        hover:shadow-md
       '
     >
-      <CardContent className=' flex flex-col items-center justify-between h-full'>
-        <p className='text-3xl font-normal tracking-tighter text-stone-800'>
-          {new Date(item.dt * 1000)
-            .toLocaleTimeString("id-ID", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-            }
+      <CardContent className='p-4 flex flex-col items-center justify-center gap-3 h-full'>
+        <p className='text-xl font-normal tracking-tight text-dark'>
+          {new Date(item.dt * 1000).toLocaleTimeString("id-ID", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </p>
-        <div className='flex flex-col items-center gap-2'>
-          <div className='relative w-20 h-20 flex items-center justify-center'>
+
+        {/* Ikon & Deskripsi */}
+        <div className='flex flex-col items-center gap-1 w-full'>
+          <div className='relative w-14 h-14 flex items-center justify-center'>
             <img
               src={`https://openweathermap.org/img/wn/${item.weather[0].icon}@4x.png`}
               alt={item.weather[0].description}
-              className='w-full h-full object-contain drop-shadow-md'
+              className='w-full h-full object-contain drop-shadow-sm'
             />
           </div>
 
-          <p className='text-sm font-normal text-dark capitalize text-center '>
+          <p className='text-xs font-medium text-stone-500 capitalize text-center leading-tight px-1 line-clamp-2'>
             {item.weather[0].description}
           </p>
         </div>
-        <p className='text-3xl font-normal tracking-tight text-stone-800'>
+
+        {/* Suhu */}
+        <p className='text-2xl font-bold tracking-tight text-stone-800'>
           {Math.round(item.main.temp)}
-          <span className='text-2xl align-top ml-1'></span>
+          <span className='text-lg align-top ml-0.5 font-semibold'>°</span>
         </p>
       </CardContent>
     </Card>

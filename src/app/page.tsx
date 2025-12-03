@@ -58,13 +58,13 @@ export default async function Home() {
       <header className='sticky top-0 z-50 w-full bg-transparent/80 backdrop-blur-md border-b border-stone-100 shadow-sm'>
         <div className='container mx-auto px-12 h-20 flex items-center justify-between'>
           <Link href='/' className='flex items-center gap-2'>
-            <div className='relative h-10 w-auto flex-shrink-0'>
+            <div className='relative h-10 md:h-14 w-auto flex-shrink-0 transition-all duration-300'>
               <Image
                 src='/img/logo2.png'
                 alt='Logo AgriSmart'
                 width={150}
-                height={40}
-                className='object-contain h-10 w-auto'
+                height={80}
+                className='object-contain h-full w-auto'
                 priority
               />
             </div>
@@ -95,7 +95,6 @@ export default async function Home() {
                 </Button>
               </Link>
             )}
-
           </div>
         </div>
       </header>

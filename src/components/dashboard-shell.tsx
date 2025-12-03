@@ -22,30 +22,38 @@ export async function DashboardShell({
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
 
-      <main className='relative flex min-h-screen w-full flex-col overflow-hidden bg-stone-50/30'>
+      <div className='fixed inset-0 w-full h-full overflow-hidden pointer-events-none -z-10'>
         <div
-          className='fixed -top-[150px] -left-[150px] w-[600px] h-[600px] 
-                     bg-[3A6F43]/80 rounded-full blur-[120px] 
-                     pointer-events-none -z-10 mix-blend-multiply'
+          className='absolute left-[41px] top-[50px] w-[242.6px] h-[168.54px] 
+                     bg-[#3A6F43]/60 rounded-full blur-[60px]'
         />
         <div
-          className='fixed -bottom-[200px] -right-[200px] w-[800px] h-[800px] 
-                     bg-[3A6F43]/87 rounded-full blur-[150px] 
-                     pointer-events-none -z-10'
+          className='absolute left-[762.9px] top-[133.95px] w-[346.35px] h-[182.55px] 
+                     bg-[#3A6F43]/50 rounded-full blur-[70px]'
         />
+        <div
+          className='absolute left-[1358.62px] top-[36.07px] w-[543.5px] h-[36.07px] 
+                     bg-[#D9D9D9]/80 rounded-full blur-[40px]'
+        />
+        <div
+          className='absolute left-[-185px] top-[764px] w-[755.46px] h-[498.7px] 
+                     bg-[#3A6F43]/40 rounded-full blur-[100px]'
+        />
+      </div>
 
-        <header className='sticky top-0 z-50 w-full bg-white/40 backdrop-blur-md border-b border-white/20 shadow-sm'>
+      <main className='relative flex min-h-screen w-full flex-col bg-stone-50/30'>
+        <header className='sticky top-0 z-50 w-full bg-white/36 backdrop-blur-md border-b border-white/20 shadow-sm'>
           <div className='container mx-auto px-6 md:px-12 h-20 flex items-center justify-between'>
             <div className='flex items-center gap-4 md:gap-6'>
               <SidebarTrigger className='scale-125 text-stone-600 hover:bg-white/50 rounded-full p-2 transition-all' />
               <Link href='/dashboard' className='flex items-center gap-2'>
-                <div className='relative h-10 w-auto flex-shrink-0'>
+                <div className='relative h-10 md:h-14 w-auto flex-shrink-0 transition-all duration-300'>
                   <Image
                     src='/img/logo2.png'
                     alt='Logo AgriSmart'
                     width={150}
-                    height={40}
-                    className='object-contain h-8 md:h-10 w-auto'
+                    height={80}
+                    className='object-contain h-full w-auto'
                     priority
                   />
                 </div>
@@ -65,7 +73,6 @@ export async function DashboardShell({
           </div>
         </header>
 
-        {/* KONTEN UTAMA */}
         <div className='flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full relative z-0'>
           {children}
         </div>

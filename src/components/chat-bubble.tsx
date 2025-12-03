@@ -13,7 +13,6 @@ export function ChatBubble(){
       <div className='fixed bottom-4 right-4 md:bottom-10 md:right-10 z-50 flex flex-col items-end gap-4 drop-shadow-2xl'>
         {isOpen && (
           <Card
-            // Lebar: menyesuaikan layar HP (dikurangi margin) -> kembali ke 350px (Desktop)
             className='w-[calc(100vw-2rem)] md:w-[350px] shadow-2xl border-stone-200 animate-in slide-in-from-bottom-5 fade-in duration-300 mb-2'
           >
             <CardFooter className='p-3 border-t bg-white'>
@@ -41,7 +40,7 @@ export function ChatBubble(){
           onClick={() => setIsOpen(!isOpen)}
           className={`h-20 w-20 rounded-full shadow-lg transition-all duration-300 hover:scale-110 ${
             isOpen
-              ? "bg-stone-200 text-stone-600 hover:bg-stone-300"
+              ? "bg-stone-200 text-dark hover:bg-stone-300"
               : "bg-[#3A6F43] text-white hover:bg-emerald-800"
           }`}
         >

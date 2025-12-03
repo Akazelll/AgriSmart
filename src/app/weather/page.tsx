@@ -13,7 +13,7 @@ import {
 } from "@/components/weather/weather-ui";
 import { WeatherHeader } from "@/components/weather/weather-header";
 import { CurrentWeatherCard } from "@/components/weather/current-weather-card";
-import { WeatherDetailsGrid } from "@/components/weather/weather-details-grid";
+// WeatherDetailsGrid sudah dihapus/tidak di-import
 
 const WeatherMap = dynamic(() => import("@/components/weather-map"), {
   ssr: false,
@@ -106,33 +106,19 @@ export default function WeatherPage() {
   if (!currentWeather || !forecast) return null;
 
   return (
-    <div className=' w-full min-h-screen bg-white/50 drop-shadow-2xl rounded-4xl  p-4 md:p-6 lg:p-8 space-y-6'>
+    <div className='w-full min-h-screen bg-white/50 drop-shadow-2xl rounded-4xl p-4 md:p-6 lg:p-8 space-y-8'>
       <WeatherHeader
         locationName={locationName || currentWeather.name}
         countryCode={currentWeather.sys.country}
       />
 
-      <div className='grid grid-cols-1 lg:grid-cols-12 gap-20'>
-        <div className='lg:col-span-8 space-y-6'>
+      <div className='grid grid-cols-1 lg:grid-cols-12 gap-8'>
+        <div className='lg:col-span-8'>
           <CurrentWeatherCard data={currentWeather} />
-
-          <section>
-            <div className='flex items-center justify-between mb-4'>
-              <h2 className='text-lg font-bold text-stone-800 dark:text-stone-100 flex items-center gap-2'>
-                <Clock className='h-5 w-5 text-emerald-600' />
-                Prakiraan 24 Jam Kedepan
-              </h2>
-            </div>
-            <div className='flex overflow-x-auto pb-4 -mx-1 px-1 gap-3 snap-x no-scrollbar'>
-              {forecast.list.slice(0, 8).map((item, i) => (
-                <ForecastCard key={item.dt} item={item} isFirst={i === 0} />
-              ))}
-            </div>
-          </section>
         </div>
 
-        <div className='lg:col-span-4 space-y-6'>
-          <Card className='border-none shadow-xl bg-white p-3 rounded-[2.5rem] h-60 relative z-0'>
+        <div className='lg:col-span-4'>
+          <Card className='border-none shadow-xl bg-white p-3 rounded-[2.5rem] h-60 lg:h-full min-h-[240px] relative z-0'>
             <div className='h-full w-full rounded-[2rem] overflow-hidden relative z-0'>
               {currentWeather.coord && (
                 <WeatherMap
@@ -143,10 +129,15 @@ export default function WeatherPage() {
               )}
             </div>
           </Card>
-
-          <WeatherDetailsGrid data={currentWeather} />
         </div>
       </div>
+      <section className='w-full'>
+        <div className='grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4 w-full'>
+          {forecast.list.slice(0, 8).map((item, i) => (
+            <ForecastCard key={item.dt} item={item} isFirst={i === 0} />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
