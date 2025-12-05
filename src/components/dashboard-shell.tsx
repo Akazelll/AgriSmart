@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { createClient } from "@supabase/supabase-js";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -18,27 +19,26 @@ export async function DashboardShell({
     redirect("/login");
   }
 
+  const supabase = createClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  const { data: user } = await supabase
+    .from("users")
+    .select("*")
+    .eq("email", session.user?.email)
+    .single();
+
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
 
       <div className='fixed inset-0 w-full h-full overflow-hidden pointer-events-none -z-10'>
-        <div
-          className='absolute left-[41px] top-[50px] w-[242.6px] h-[168.54px] 
-                     bg-[#3A6F43]/60 rounded-full blur-[60px]'
-        />
-        <div
-          className='absolute left-[762.9px] top-[133.95px] w-[346.35px] h-[182.55px] 
-                     bg-[#3A6F43]/50 rounded-full blur-[70px]'
-        />
-        <div
-          className='absolute left-[1358.62px] top-[36.07px] w-[543.5px] h-[36.07px] 
-                     bg-[#D9D9D9]/80 rounded-full blur-[40px]'
-        />
-        <div
-          className='absolute left-[-185px] top-[764px] w-[755.46px] h-[498.7px] 
-                     bg-[#3A6F43]/40 rounded-full blur-[100px]'
-        />
+        <div className='absolute left-[41px] top-[50px] w-[242.6px] h-[168.54px] bg-[#3A6F43]/60 rounded-full blur-[60px]' />
+        <div className='absolute left-[762.9px] top-[133.95px] w-[346.35px] h-[182.55px] bg-[#3A6F43]/50 rounded-full blur-[70px]' />
+        <div className='absolute left-[1358.62px] top-[36.07px] w-[543.5px] h-[36.07px] bg-[#D9D9D9]/80 rounded-full blur-[40px]' />
+        <div className='absolute left-[-185px] top-[764px] w-[755.46px] h-[498.7px] bg-[#3A6F43]/40 rounded-full blur-[100px]' />
       </div>
 
       <main className='relative flex min-h-screen w-full flex-col bg-stone-50/30'>
@@ -63,9 +63,21 @@ export async function DashboardShell({
             <div className='flex items-center gap-8'>
               <div className='flex items-center gap-3 pl-1 pr-4 py-1'>
                 <div className='hidden md:flex flex-row items-center gap-4'>
-                  <FaRegCircleUser className='text-4xl text-stone-600 drop-shadow-sm' />
+                  {user?.image ? (
+                    <div className='relative w-10 h-10 rounded-full overflow-hidden border border-stone-200'>
+                      <Image
+                        src={user.image}
+                        alt='Profile'
+                        fill
+                        className='object-cover'
+                      />
+                    </div>
+                  ) : (
+                    <FaRegCircleUser className='text-4xl text-stone-600 drop-shadow-sm' />
+                  )}
+
                   <p className='text-xl font-medium text-stone-700'>
-                    {session.user?.name?.split(" ")[0] || "Pengguna"}
+                    {user?.name || "Pengguna"}
                   </p>
                 </div>
               </div>
