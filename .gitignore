@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Python
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Model & Dataset (Jangan push file besar >100MB ke GitHub)
+*.h5
+*.keras
+dataset/

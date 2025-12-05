@@ -1,19 +1,36 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Image from "next/image";
 import {
   Upload,
   X,
+  Loader2,
   ScanSearch,
-  Sprout,
   AlertCircle,
   CheckCircle2,
+  Leaf,
 } from "lucide-react";
-import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
+import { createClient } from "@supabase/supabase-js";
 
+// --- 1. INISIALISASI SUPABASE CLIENT ---
+// Pastikan variabel ini ada di file .env.local Anda
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!, // Harus ada NEXT_PUBLIC_
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+// --- 2. TIPE DATA ---
 interface PredictionResult {
   label: string;
   confidence: number;
@@ -21,243 +38,337 @@ interface PredictionResult {
   solution: string;
 }
 
-export default function PenyakitPage() {
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+export default function PredictPage() {
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<PredictionResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setImagePreview(url);
-      setSelectedFile(file);
-      setResult(null);
+  // --- 3. HANDLER FILE & DRAG DROP ---
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      processFile(e.target.files[0]);
     }
   };
 
-  const handleRemoveImage = () => {
-    setImagePreview(null);
-    setSelectedFile(null);
-    setResult(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
   };
 
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setImagePreview(url);
-      setSelectedFile(file);
-      setResult(null);
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
     }
   };
 
-  const handleAnalyze = async () => {
-    if (!selectedFile) return;
+  const processFile = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setError("Mohon upload file gambar (JPG, PNG, JPEG)");
+      return;
+    }
+    // Validasi ukuran (misal maks 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Ukuran file terlalu besar (Maks 5MB)");
+      return;
+    }
+
+    const imageUrl = URL.createObjectURL(file);
+    setSelectedImage(imageUrl);
+    setFile(file);
+    setResult(null);
+    setError(null);
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setFile(null);
+    setResult(null);
+    setError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // --- 4. LOGIKA UTAMA (UPLOAD -> PREDICT) ---
+  const handleSubmit = async () => {
+    if (!file) return;
 
     setIsLoading(true);
-    setResult(null);
-
-    const formData = new FormData();
-    formData.append("file", selectedFile);
+    setError(null);
 
     try {
-      // PENTING: Gunakan Port 8000 sesuai backend Python
-      const response = await fetch("http://localhost:8000/predict", {
-        method: "POST",
-        body: formData,
-      });
+      // A. Upload ke Supabase Storage
+      // Gunakan timestamp agar nama file unik
+      const fileName = `uploads/${Date.now()}-${file.name.replace(/\s/g, "_")}`;
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Gagal terhubung ke server AI.");
+      const { error: uploadError } = await supabase.storage
+        .from("images") // Pastikan bucket 'images' sudah dibuat di Supabase
+        .upload(fileName, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(`Gagal upload ke Supabase: ${uploadError.message}`);
       }
 
-      const data = await response.json();
+      // B. Dapatkan Public URL
+      const { data: publicUrlData } = supabase.storage
+        .from("images")
+        .getPublicUrl(fileName);
 
-      setResult({
-        label: data.label,
-        confidence: data.confidence,
-        description: data.description,
-        solution: data.solution,
+      const publicUrl = publicUrlData.publicUrl;
+      console.log("Gambar berhasil diupload:", publicUrl);
+
+      // C. Kirim URL ke Backend Python
+      const response = await fetch("http://127.0.0.1:8000/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // Mengirim JSON berisi URL, bukan file mentah
+        body: JSON.stringify({ image_url: publicUrl }),
       });
-    } catch (error: any) {
-      console.error("Error:", error);
-      alert(
-        // Gagal memproses: ${error.message}\nPastikan server Python (app.py) sudah berjalan di port 8000!
-      );
+
+      const resultData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(resultData.error || "Gagal memproses di server Python");
+      }
+
+      // D. Simpan Hasil
+      setResult(resultData);
+    } catch (err: any) {
+      console.error("Error Flow:", err);
+      setError(err.message || "Terjadi kesalahan sistem.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // --- 5. RENDER UI ---
   return (
-    <div className="flex min-h-screen w-full flex-col p-4 md:p-8 space-y-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold text-stone-800 flex items-center gap-2">
-          <Sprout className="text-[#3A6F43]" size={32} />
-          Deteksi Penyakit Padi
+    <div className='flex flex-col gap-8 w-full max-w-5xl mx-auto pb-12 px-4 md:px-0'>
+      {/* Header Halaman */}
+      <div className='flex flex-col gap-2'>
+        <h1 className='text-3xl font-bold text-stone-800 flex items-center gap-2'>
+          <Leaf className='text-emerald-600' />
+          Deteksi Penyakit Tanaman
         </h1>
-        <p className="text-stone-500">
-          Unggah foto daun padi untuk mendeteksi penyakit dan mendapatkan solusi
-          penanganan.
+        <p className='text-stone-500 text-lg'>
+          Upload foto daun tanaman padi Anda untuk mendapatkan diagnosa instan
+          dan solusi penanganannya.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Kolom Upload */}
-        <div className="lg:col-span-7 space-y-6">
-          <Card className="border-none shadow-xl bg-white/60 backdrop-blur-md rounded-[2rem] overflow-hidden">
-            <CardHeader>
-              <CardTitle className="text-lg text-stone-700">
-                Upload Gambar
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 items-start'>
+        {/* --- KOLOM KIRI: UPLOAD CARD --- */}
+        <Card className='border-none shadow-xl bg-white/80 backdrop-blur-sm'>
+          <CardHeader>
+            <CardTitle className='text-xl flex items-center gap-2 text-stone-700'>
+              <ScanSearch className='text-emerald-600' />
+              Upload Gambar
+            </CardTitle>
+            <CardDescription>
+              Format yang didukung: JPEG, PNG, JPG (Maks. 5MB)
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className='space-y-6'>
+            {!selectedImage ? (
+              // Area Drag & Drop
               <div
-                className={cn(
-                  "relative w-full min-h-[300px] border-2 border-dashed rounded-3xl flex flex-col items-center justify-center transition-all duration-300 overflow-hidden bg-stone-50/50",
-                  imagePreview
-                    ? "border-[#3A6F43]/30"
-                    : "border-stone-300 hover:border-[#3A6F43]/50 hover:bg-stone-100/50"
-                )}
-                onDragOver={(e) => e.preventDefault()}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-              >
-                {imagePreview ? (
-                  <div className="relative w-full h-full min-h-[300px] group">
-                    <Image
-                      src={imagePreview}
-                      alt="Preview"
-                      fill
-                      className="object-contain p-4"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button
-                        variant="destructive"
-                        onClick={handleRemoveImage}
-                        className="rounded-full h-12 w-12 p-0 shadow-lg"
-                      >
-                        <X size={24} />
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div
-                    className="flex flex-col items-center gap-4 p-8 text-center cursor-pointer"
-                    onClick={handleUploadClick}
-                  >
-                    <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center text-[#3A6F43] mb-2 shadow-sm">
-                      <Upload size={32} />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-lg font-medium text-stone-700">
-                        Klik untuk upload atau drag & drop
-                      </p>
-                      <p className="text-sm text-stone-400">
-                        Format: JPG, PNG, JPEG
-                      </p>
-                    </div>
-                  </div>
+                onClick={() => fileInputRef.current?.click()}
+                className={cn(
+                  "border-3 border-dashed rounded-[2rem] p-10 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 min-h-[320px] bg-stone-50",
+                  isDragging
+                    ? "border-emerald-500 bg-emerald-50/50 scale-[1.01]"
+                    : "border-stone-300 hover:border-emerald-400 hover:bg-emerald-50/30"
                 )}
+              >
                 <input
-                  type="file"
+                  type='file'
                   ref={fileInputRef}
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleFileChange}
+                  className='hidden'
+                  accept='image/jpeg, image/png, image/jpg'
+                  onChange={handleFileSelect}
                 />
-              </div>
 
-              <div className="flex justify-end">
-                <Button
-                  onClick={handleAnalyze}
-                  disabled={!selectedFile || isLoading}
-                  className={cn(
-                    "w-full md:w-auto rounded-full px-8 py-6 text-lg font-medium shadow-lg transition-all hover:scale-105",
-                    isLoading
-                      ? "bg-stone-400"
-                      : "bg-[#3A6F43] hover:bg-[#2c4d35]"
-                  )}
-                >
-                  {isLoading ? (
-                    "Menganalisis..."
-                  ) : (
-                    <>
-                      <ScanSearch className="mr-2 h-5 w-5" /> Analisis Gambar
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Kolom Hasil */}
-        <div className="lg:col-span-5 space-y-6">
-          {!result && !isLoading && (
-            <div className="h-full min-h-[300px] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-stone-200 rounded-[2rem] text-stone-400 bg-white/30">
-              <AlertCircle size={48} className="mb-4 opacity-50" />
-              <p className="text-lg">Hasil analisis akan muncul di sini</p>
-            </div>
-          )}
-
-          {isLoading && (
-            <Card className="border-none shadow-lg bg-white rounded-[2rem] p-6 space-y-4 animate-pulse">
-              <div className="h-8 bg-stone-200 rounded-lg w-3/4"></div>
-              <div className="h-4 bg-stone-200 rounded-lg w-1/2"></div>
-              <div className="h-32 bg-stone-200 rounded-2xl w-full mt-4"></div>
-            </Card>
-          )}
-
-          {result && !isLoading && (
-            <Card className="border-none shadow-xl bg-white rounded-[2rem] overflow-hidden border-t-8 border-t-[#3A6F43]">
-              <CardHeader className="bg-[#f4f5f0] pb-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium text-stone-500 uppercase tracking-wider">
-                      Terdeteksi
-                    </p>
-                    <CardTitle className="text-3xl font-bold text-[#3A6F43] mt-1">
-                      {result.label}
-                    </CardTitle>
-                  </div>
-                  <div className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm font-bold shadow-sm">
-                    {result.confidence}% Akurat
-                  </div>
+                <div className='bg-white p-4 rounded-full mb-4 shadow-sm border border-stone-100'>
+                  <Upload className='h-8 w-8 text-emerald-600' />
                 </div>
-              </CardHeader>
-              <CardContent className="p-6 space-y-6">
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-stone-800 flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-orange-500" />{" "}
-                    Deskripsi Masalah
-                  </h3>
-                  <p className="text-stone-600 leading-relaxed text-sm">
-                    {result.description}
+                <p className='text-lg font-bold text-stone-700'>
+                  Klik atau drag & drop
+                </p>
+                <p className='text-sm text-stone-400 mt-2 text-center max-w-xs'>
+                  Upload foto daun dengan pencahayaan yang cukup agar hasil
+                  prediksi akurat.
+                </p>
+              </div>
+            ) : (
+              // Area Preview Gambar
+              <div className='relative rounded-[2rem] overflow-hidden border border-stone-200 shadow-sm bg-stone-50 group'>
+                <div className='relative w-full h-[320px]'>
+                  <Image
+                    src={selectedImage}
+                    alt='Preview'
+                    fill
+                    className='object-contain p-2'
+                  />
+                </div>
+                {/* Tombol Hapus */}
+                <div className='absolute top-4 right-4 z-10'>
+                  <Button
+                    variant='destructive'
+                    size='icon'
+                    onClick={handleRemoveImage}
+                    className='rounded-full shadow-lg w-10 h-10 hover:scale-110 transition-transform'
+                    disabled={isLoading}
+                  >
+                    <X className='h-5 w-5' />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Tombol Aksi */}
+            <Button
+              onClick={handleSubmit}
+              disabled={!selectedImage || isLoading}
+              className={cn(
+                "w-full rounded-full py-6 text-lg shadow-lg transition-all hover:scale-[1.02] font-bold",
+                isLoading
+                  ? "bg-stone-200 text-stone-500 cursor-not-allowed"
+                  : "bg-[#3A6F43] hover:bg-emerald-800 text-white"
+              )}
+            >
+              {isLoading ? (
+                <div className='flex items-center gap-2'>
+                  <Loader2 className='h-5 w-5 animate-spin' />
+                  Sedang Menganalisa...
+                </div>
+              ) : (
+                <div className='flex items-center gap-2'>
+                  <ScanSearch className='h-5 w-5' />
+                  Analisa Sekarang
+                </div>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* --- KOLOM KANAN: HASIL PREDIKSI --- */}
+        <div className='space-y-6'>
+          {/* Pesan Error */}
+          {error && (
+            <Alert
+              variant='destructive'
+              className='bg-red-50 border-red-200 text-red-800 rounded-2xl animate-in fade-in slide-in-from-top-2'
+            >
+              <AlertCircle className='h-5 w-5' />
+              <AlertTitle className='font-bold ml-2'>
+                Gagal Memproses
+              </AlertTitle>
+              <AlertDescription className='ml-2 mt-1'>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* Kartu Hasil */}
+          {result ? (
+            <Card className='border-none shadow-xl bg-white/90 backdrop-blur-md overflow-hidden rounded-[2.5rem] animate-in fade-in slide-in-from-bottom-8 duration-700'>
+              {/* Header Hasil */}
+              <div className='bg-emerald-600 p-6 text-white text-center relative overflow-hidden'>
+                <div className='absolute top-0 left-0 w-full h-full bg-white/10 skew-y-6 transform origin-bottom-left' />
+                <h3 className='font-bold text-xl flex items-center justify-center gap-2 relative z-10'>
+                  <CheckCircle2 className='h-7 w-7' />
+                  Hasil Analisa Selesai
+                </h3>
+              </div>
+
+              <CardContent className='p-8 space-y-8'>
+                {/* Label & Confidence */}
+                <div className='text-center space-y-3'>
+                  <p className='text-xs font-bold text-stone-400 uppercase tracking-widest'>
+                    Penyakit Terdeteksi
                   </p>
+                  <h2 className='text-4xl font-extrabold text-stone-800 leading-tight'>
+                    {result.label}
+                  </h2>
+                  <div className='inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-100 text-emerald-800 rounded-full text-sm font-semibold shadow-sm'>
+                    Tingkat Keyakinan: {result.confidence}%
+                  </div>
                 </div>
-                <div className="w-full border-t border-stone-100" />
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-stone-800 flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />{" "}
-                    Rekomendasi Solusi
-                  </h3>
-                  <div className="bg-emerald-50/80 p-4 rounded-xl border border-emerald-100">
-                    <p className="text-emerald-900 text-sm leading-relaxed font-medium">
-                      {result.solution}
+
+                <div className='w-full h-px bg-stone-100' />
+
+                {/* Deskripsi & Solusi */}
+                <div className='space-y-6'>
+                  <div>
+                    <h4 className='font-bold text-stone-700 mb-2 flex items-center gap-2'>
+                      📋 Deskripsi
+                    </h4>
+                    <p className='text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-2xl border border-stone-100'>
+                      {result.description}
                     </p>
+                  </div>
+
+                  <div>
+                    <h4 className='font-bold text-amber-700 mb-2 flex items-center gap-2'>
+                      💡 Solusi Rekomendasi
+                    </h4>
+                    <div className='bg-amber-50 p-5 rounded-2xl border border-amber-100 text-amber-900/90 leading-relaxed text-sm shadow-sm'>
+                      {result.solution}
+                    </div>
                   </div>
                 </div>
               </CardContent>
+            </Card>
+          ) : (
+            // Placeholder Kosong (Saat belum ada hasil)
+            !isLoading &&
+            !error && (
+              <div className='h-full min-h-[400px] flex flex-col items-center justify-center text-stone-400 border-3 border-dashed border-stone-200 rounded-[2.5rem] bg-white/40 p-8 text-center space-y-4'>
+                <div className='bg-white p-6 rounded-full shadow-sm'>
+                  <ScanSearch className='h-16 w-16 text-stone-300' />
+                </div>
+                <div>
+                  <p className='text-lg font-semibold text-stone-500'>
+                    Belum ada data
+                  </p>
+                  <p className='text-sm'>
+                    Silakan upload gambar untuk melihat hasil prediksi.
+                  </p>
+                </div>
+              </div>
+            )
+          )}
+
+          {/* Skeleton Loading saat proses */}
+          {isLoading && !result && (
+            <Card className='border-none shadow-lg bg-white/80 p-8 rounded-[2.5rem] space-y-4 animate-pulse'>
+              <div className='h-8 bg-stone-200 rounded-full w-3/4 mx-auto' />
+              <div className='h-4 bg-stone-100 rounded-full w-1/2 mx-auto' />
+              <div className='h-px bg-stone-100 my-6' />
+              <div className='space-y-2'>
+                <div className='h-4 bg-stone-200 rounded-full w-full' />
+                <div className='h-4 bg-stone-100 rounded-full w-5/6' />
+                <div className='h-4 bg-stone-100 rounded-full w-4/6' />
+              </div>
             </Card>
           )}
         </div>
