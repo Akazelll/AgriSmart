@@ -1,7 +1,6 @@
 export default function KeuanganPage() {
-  return(
+  return (
     <div className='flex min-h-screen w-full flex-col'>
-
     </div>
   );
 }
