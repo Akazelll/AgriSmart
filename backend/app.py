@@ -41,7 +41,6 @@ SOLUTIONS = {
     "Bacterial Leaf Blight": "Penyakit Hawar Daun Bakteri. Gunakan bakterisida berbahan aktif tembaga, kurangi pupuk Nitrogen (Urea), dan atur pengairan agar tidak terlalu tergenang.",
     "Brown Spot": "Penyakit Bercak Coklat. Biasanya karena kekurangan unsur hara. Berikan pemupukan berimbang (terutama Kalium & Kalsium) dan jaga sanitasi lahan.",
     "Leaf Blast": "Penyakit Blast Daun. Semprotkan fungisida (seperti difenokonazol), hindari jarak tanam rapat, dan bakar sisa panen terinfeksi.",
-    "Leaf Smut": "Penyakit Gosong Daun. Bersihkan gulma dan gunakan fungisida berbahan aktif tembaga.",
     "Healthy Rice Leaf": "Tanaman Sehat. Pertahankan dengan pemupukan berimbang."
 }
 
