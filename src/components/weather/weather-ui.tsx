@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Droplets } from "lucide-react";
 import { ForecastItem } from "@/types/weather";
 import { cn } from "@/lib/utils";
@@ -68,7 +67,6 @@ export function ForecastCard({
           })}
         </p>
 
-        {/* Ikon & Deskripsi */}
         <div className='flex flex-col items-center gap-1 w-full'>
           <div className='relative w-14 h-14 flex items-center justify-center'>
             <img
@@ -119,27 +117,6 @@ export function DetailCardSmall({
   );
 }
 
-export function ProfessionalSkeleton() {
-  return (
-    <div className='p-6 space-y-8 min-h-screen bg-[#f4f5f0] dark:bg-[#0c0c0c] rounded-4xl'>
-      <Skeleton className='h-10 w-1/3' />
-      <div className='grid lg:grid-cols-12 gap-6'>
-        <div className='lg:col-span-8 space-y-6'>
-          <Skeleton className='h-[350px] rounded-3xl' />
-          <Skeleton className='h-[180px] rounded-2xl' />
-        </div>
-        <div className='lg:col-span-4 space-y-6'>
-          <Skeleton className='h-[300px] rounded-3xl' />
-          <div className='grid grid-cols-2 gap-3'>
-            {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className='h-24 rounded-xl' />
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function ProfessionalError({ message }: { message: string }) {
   return (

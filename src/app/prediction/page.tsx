@@ -22,15 +22,13 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { createClient } from "@supabase/supabase-js";
+import { saveScanHistory } from "@/app/actions/save-history";
 
-// --- 1. INISIALISASI SUPABASE CLIENT ---
-// Pastikan variabel ini ada di file .env.local Anda
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!, // Harus ada NEXT_PUBLIC_
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// --- 2. TIPE DATA ---
 interface PredictionResult {
   label: string;
   confidence: number;
@@ -48,7 +46,6 @@ export default function PredictPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // --- 3. HANDLER FILE & DRAG DROP ---
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       processFile(e.target.files[0]);
@@ -78,7 +75,7 @@ export default function PredictPage() {
       setError("Mohon upload file gambar (JPG, PNG, JPEG)");
       return;
     }
-    // Validasi ukuran (misal maks 5MB)
+
     if (file.size > 5 * 1024 * 1024) {
       setError("Ukuran file terlalu besar (Maks 5MB)");
       return;
@@ -101,7 +98,6 @@ export default function PredictPage() {
     }
   };
 
-  // --- 4. LOGIKA UTAMA (UPLOAD -> PREDICT) ---
   const handleSubmit = async () => {
     if (!file) return;
 
@@ -109,12 +105,10 @@ export default function PredictPage() {
     setError(null);
 
     try {
-      // A. Upload ke Supabase Storage
-      // Gunakan timestamp agar nama file unik
       const fileName = `uploads/${Date.now()}-${file.name.replace(/\s/g, "_")}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("images") // Pastikan bucket 'images' sudah dibuat di Supabase
+        .from("images")
         .upload(fileName, file, {
           cacheControl: "3600",
           upsert: false,
@@ -124,7 +118,6 @@ export default function PredictPage() {
         throw new Error(`Gagal upload ke Supabase: ${uploadError.message}`);
       }
 
-      // B. Dapatkan Public URL
       const { data: publicUrlData } = supabase.storage
         .from("images")
         .getPublicUrl(fileName);
@@ -132,12 +125,10 @@ export default function PredictPage() {
       const publicUrl = publicUrlData.publicUrl;
       console.log("Gambar berhasil diupload:", publicUrl);
 
-      // C. Kirim URL ke Backend Python
       const apiUrl =
         process.env.NEXT_PUBLIC_API_URL ||
         "https://akazelll-api-agrismart.hf.space";
 
-      // 2. Gunakan variable tersebut di fetch
       const response = await fetch(`${apiUrl}/predict`, {
         method: "POST",
         headers: {
@@ -152,7 +143,18 @@ export default function PredictPage() {
         throw new Error(resultData.error || "Gagal memproses di server Python");
       }
 
-      // D. Simpan Hasil
+      const saveResponse = await saveScanHistory({
+        imageUrl: publicUrl,
+        label: resultData.label,
+        confidence: resultData.confidence,
+        description: resultData.description,
+        solution: resultData.solution,
+      });
+
+      if (saveResponse?.error) {
+        console.error("Warning: Gagal menyimpan history:", saveResponse.error);
+      }
+
       setResult(resultData);
     } catch (err: any) {
       console.error("Error Flow:", err);
@@ -162,10 +164,8 @@ export default function PredictPage() {
     }
   };
 
-  // --- 5. RENDER UI ---
   return (
     <div className='flex flex-col gap-8 w-full max-w-5xl mx-auto pb-12 px-4 md:px-0'>
-      {/* Header Halaman */}
       <div className='flex flex-col gap-2'>
         <h1 className='text-3xl font-bold text-stone-800 flex items-center gap-2'>
           <Leaf className='text-emerald-600' />
@@ -178,7 +178,6 @@ export default function PredictPage() {
       </div>
 
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 items-start'>
-        {/* --- KOLOM KIRI: UPLOAD CARD --- */}
         <Card className='border-none shadow-xl bg-white/80 backdrop-blur-sm'>
           <CardHeader>
             <CardTitle className='text-xl flex items-center gap-2 text-stone-700'>
@@ -192,7 +191,6 @@ export default function PredictPage() {
 
           <CardContent className='space-y-6'>
             {!selectedImage ? (
-              // Area Drag & Drop
               <div
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -225,7 +223,6 @@ export default function PredictPage() {
                 </p>
               </div>
             ) : (
-              // Area Preview Gambar
               <div className='relative rounded-[2rem] overflow-hidden border border-stone-200 shadow-sm bg-stone-50 group'>
                 <div className='relative w-full h-[320px]'>
                   <Image
@@ -235,7 +232,6 @@ export default function PredictPage() {
                     className='object-contain p-2'
                   />
                 </div>
-                {/* Tombol Hapus */}
                 <div className='absolute top-4 right-4 z-10'>
                   <Button
                     variant='destructive'
@@ -250,7 +246,6 @@ export default function PredictPage() {
               </div>
             )}
 
-            {/* Tombol Aksi */}
             <Button
               onClick={handleSubmit}
               disabled={!selectedImage || isLoading}
@@ -276,9 +271,7 @@ export default function PredictPage() {
           </CardContent>
         </Card>
 
-        {/* --- KOLOM KANAN: HASIL PREDIKSI --- */}
         <div className='space-y-6'>
-          {/* Pesan Error */}
           {error && (
             <Alert
               variant='destructive'
@@ -292,10 +285,8 @@ export default function PredictPage() {
             </Alert>
           )}
 
-          {/* Kartu Hasil */}
           {result ? (
             <Card className='border-none shadow-xl bg-white/90 backdrop-blur-md overflow-hidden rounded-[2.5rem] animate-in fade-in slide-in-from-bottom-8 duration-700'>
-              {/* Header Hasil */}
               <div className='bg-emerald-600 p-6 text-white text-center relative overflow-hidden'>
                 <div className='absolute top-0 left-0 w-full h-full bg-white/10 skew-y-6 transform origin-bottom-left' />
                 <h3 className='font-bold text-xl flex items-center justify-center gap-2 relative z-10'>
@@ -305,7 +296,6 @@ export default function PredictPage() {
               </div>
 
               <CardContent className='p-8 space-y-8'>
-                {/* Label & Confidence */}
                 <div className='text-center space-y-3'>
                   <p className='text-xs font-bold text-stone-400 uppercase tracking-widest'>
                     Penyakit Terdeteksi
@@ -319,8 +309,6 @@ export default function PredictPage() {
                 </div>
 
                 <div className='w-full h-px bg-stone-100' />
-
-                {/* Deskripsi & Solusi */}
                 <div className='space-y-6'>
                   <div>
                     <h4 className='font-bold text-stone-700 mb-2 flex items-center gap-2'>
@@ -343,7 +331,6 @@ export default function PredictPage() {
               </CardContent>
             </Card>
           ) : (
-            // Placeholder Kosong (Saat belum ada hasil)
             !isLoading &&
             !error && (
               <div className='h-full min-h-[400px] flex flex-col items-center justify-center text-stone-400 border-3 border-dashed border-stone-200 rounded-[2.5rem] bg-white/40 p-8 text-center space-y-4'>
@@ -362,7 +349,6 @@ export default function PredictPage() {
             )
           )}
 
-          {/* Skeleton Loading saat proses */}
           {isLoading && !result && (
             <Card className='border-none shadow-lg bg-white/80 p-8 rounded-[2.5rem] space-y-4 animate-pulse'>
               <div className='h-8 bg-stone-200 rounded-full w-3/4 mx-auto' />
