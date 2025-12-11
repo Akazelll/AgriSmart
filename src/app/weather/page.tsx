@@ -3,21 +3,23 @@
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Clock } from "lucide-react";
+// import { Skeleton } from "@/components/ui/skeleton"; // Hapus import ini
+import { Clock, Loader2 } from "lucide-react"; // Tambahkan Loader2
 import { WeatherData, ForecastData } from "@/types/weather";
 import {
-  ProfessionalSkeleton,
+  // ProfessionalSkeleton, // Hapus import ini
   ProfessionalError,
   ForecastCard,
 } from "@/components/weather/weather-ui";
 import { WeatherHeader } from "@/components/weather/weather-header";
 import { CurrentWeatherCard } from "@/components/weather/current-weather-card";
-// WeatherDetailsGrid sudah dihapus/tidak di-import
 
 const WeatherMap = dynamic(() => import("@/components/weather-map"), {
   ssr: false,
-  loading: () => <Skeleton className='h-full w-full rounded-2xl' />,
+  // Ganti Skeleton map dengan div sederhana
+  loading: () => (
+    <div className='h-full w-full rounded-2xl bg-stone-100 animate-pulse' />
+  ),
 });
 
 export default function WeatherPage() {
@@ -101,7 +103,14 @@ export default function WeatherPage() {
     }
   };
 
-  if (loading) return <ProfessionalSkeleton />;
+  if (loading) {
+    return (
+      <div className='flex h-screen w-full items-center justify-center'>
+        <Loader2 className='h-8 w-8 animate-spin text-emerald-600' />
+      </div>
+    );
+  }
+
   if (error) return <ProfessionalError message={error} />;
   if (!currentWeather || !forecast) return null;
 
