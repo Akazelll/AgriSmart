@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  CloudSun,
   ScanSearch,
   History,
   ArrowRight,
@@ -15,6 +14,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { DiseaseChart } from "@/components/dashboard/disease-chart";
+// 1. IMPORT KOMPONEN BARU
+import { DashboardWeatherCard } from "@/components/dashboard/weather-card";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -56,21 +57,15 @@ export default async function DashboardPage() {
 
   const chartData = Object.entries(diseaseCounts)
     .map(([disease, count], index) => {
-      const colors = [
-        "#059669",
-        "#10b981",
-        "#34d399",
-        "#6ee7b7",
-        "#a7f3d0",
-      ];
+      const colors = ["#059669", "#10b981", "#34d399", "#6ee7b7", "#a7f3d0"];
       return {
         disease,
         count,
         fill: colors[index % colors.length],
       };
     })
-    .sort((a, b) => b.count - a.count) 
-    .slice(0, 5); 
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
 
   const totalScan = allHistory?.length || 0;
 
@@ -86,30 +81,8 @@ export default async function DashboardPage() {
       </div>
 
       <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-        {/* Card Cuaca */}
-        <Card className='bg-gradient-to-br from-blue-500 to-blue-600 border-none text-white shadow-lg relative overflow-hidden'>
-          <div className='absolute top-0 right-0 p-4 opacity-20'>
-            <CloudSun size={100} />
-          </div>
-          <CardHeader className='pb-2'>
-            <CardTitle className='text-white/90 font-medium text-lg flex items-center gap-2'>
-              <CloudSun size={20} /> Cuaca Hari Ini
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className='text-4xl font-bold mb-1'>28°C</div>
-            <p className='text-blue-100 text-sm mb-4'>Cerah Berawan</p>
-            <Link href='/weather'>
-              <Button
-                variant='secondary'
-                size='sm'
-                className='rounded-full bg-white/20 hover:bg-white/30 text-white border-none'
-              >
-                Lihat Detail <ArrowRight size={14} className='ml-1' />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        {/* 2. GANTI CARD CUACA LAMA DENGAN COMPONENT BARU */}
+        <DashboardWeatherCard />
 
         <Card className='bg-gradient-to-br from-emerald-600 to-emerald-700 border-none text-white shadow-lg relative overflow-hidden'>
           <div className='absolute top-0 right-0 p-4 opacity-20'>
@@ -162,6 +135,7 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
+      {/* Bagian Bawah Tetap Sama */}
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
         <div className='lg:col-span-2 space-y-4'>
           <div className='flex items-center justify-between'>
