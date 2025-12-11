@@ -36,12 +36,13 @@ export default function KeuanganPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // State Form
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"income" | "expense">("income");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  
+  // 1. Fetch Data
   useEffect(() => {
     async function loadData() {
       try {
@@ -57,7 +58,7 @@ export default function KeuanganPage() {
     loadData();
   }, []);
 
-  
+  // 2. Kalkulasi
   const totalIncome = transactions
     .filter((t) => t.type === "income")
     .reduce((acc, curr) => acc + curr.amount, 0);
@@ -77,6 +78,7 @@ export default function KeuanganPage() {
     }).format(number);
   };
 
+  // 3. Handle Add
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description || !amount) {
@@ -104,6 +106,7 @@ export default function KeuanganPage() {
     setIsSubmitting(false);
   };
 
+  // 4. Handle Delete
   const handleDelete = async (id: number) => {
     const promise = new Promise(async (resolve, reject) => {
       const prevData = [...transactions];
@@ -113,7 +116,7 @@ export default function KeuanganPage() {
       if (res?.success) {
         resolve("Data dihapus");
       } else {
-        setTransactions(prevData); 
+        setTransactions(prevData);
         reject("Gagal menghapus");
       }
     });
@@ -127,6 +130,7 @@ export default function KeuanganPage() {
 
   return (
     <div className='flex flex-col space-y-6 pb-20 w-full max-w-full overflow-hidden'>
+      {/* HEADER */}
       <div className='px-1'>
         <h1 className='text-2xl md:text-3xl font-bold text-stone-800'>
           Manajemen Keuangan
@@ -136,6 +140,7 @@ export default function KeuanganPage() {
         </p>
       </div>
 
+      {/* RINGKASAN SALDO */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
         <Card className='bg-white border-stone-200 shadow-sm'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4'>
