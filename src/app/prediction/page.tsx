@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import {
   Upload,
@@ -10,6 +10,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Leaf,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +24,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { createClient } from "@supabase/supabase-js";
 import { saveScanHistory } from "@/app/actions/save-history";
+import { toast } from "sonner";
 
+// Inisialisasi Supabase Client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -45,6 +48,12 @@ export default function PredictPage() {
   const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (selectedImage) URL.revokeObjectURL(selectedImage);
+    };
+  }, [selectedImage]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -71,13 +80,14 @@ export default function PredictPage() {
   };
 
   const processFile = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setError("Mohon upload file gambar (JPG, PNG, JPEG)");
+    const validTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Format file tidak didukung. Gunakan JPG, PNG, atau WEBP.");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError("Ukuran file terlalu besar (Maks 5MB)");
+      toast.error("File terlalu besar (Maksimal 5MB).");
       return;
     }
 
@@ -86,9 +96,11 @@ export default function PredictPage() {
     setFile(file);
     setResult(null);
     setError(null);
+    toast.success("Foto berhasil dipilih.");
   };
 
   const handleRemoveImage = () => {
+    if (selectedImage) URL.revokeObjectURL(selectedImage);
     setSelectedImage(null);
     setFile(null);
     setResult(null);
@@ -105,60 +117,74 @@ export default function PredictPage() {
     setError(null);
 
     try {
-      const fileName = `uploads/${Date.now()}-${file.name.replace(/\s/g, "_")}`;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        throw new Error(
+          "Konfigurasi Error: NEXT_PUBLIC_API_URL belum disetting."
+        );
+      }
+
+      const fileExt = file.name.split(".").pop();
+      const sanitizedFileName = file.name
+        .replace(/[^a-zA-Z0-9]/g, "-")
+        .toLowerCase();
+      const fileName = `uploads/${Date.now()}-${sanitizedFileName}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("images")
-        .upload(fileName, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
+        .upload(fileName, file, { cacheControl: "3600", upsert: false });
 
-      if (uploadError) {
-        throw new Error(`Gagal upload ke Supabase: ${uploadError.message}`);
-      }
+      if (uploadError)
+        throw new Error("Gagal mengupload gambar ke penyimpanan.");
 
       const { data: publicUrlData } = supabase.storage
         .from("images")
         .getPublicUrl(fileName);
 
       const publicUrl = publicUrlData.publicUrl;
-      console.log("Gambar berhasil diupload:", publicUrl);
-
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL ||
-        "https://akazelll-api-agrismart.hf.space";
 
       const response = await fetch(`${apiUrl}/predict`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image_url: publicUrl }),
       });
 
       const resultData = await response.json();
 
       if (!response.ok) {
-        throw new Error(resultData.error || "Gagal memproses di server Python");
+        throw new Error(resultData.error || "Gagal memproses gambar di AI.");
       }
+
+      const fixedConfidence = parseFloat(
+        Number(resultData.confidence).toFixed(3)
+      );
+
+      const fixedDescription = `Terdeteksi sebagai ${resultData.label} dengan tingkat keyakinan ${fixedConfidence}%.`;
 
       const saveResponse = await saveScanHistory({
         imageUrl: publicUrl,
         label: resultData.label,
-        confidence: resultData.confidence,
-        description: resultData.description,
+        confidence: fixedConfidence,
+        description: fixedDescription,
         solution: resultData.solution,
       });
 
       if (saveResponse?.error) {
-        console.error("Warning: Gagal menyimpan history:", saveResponse.error);
+        toast.warning("Hasil muncul, namun gagal disimpan di riwayat.");
+      } else {
+        toast.success("Diagnosa selesai!");
       }
 
-      setResult(resultData);
+      // 5. Update State UI
+      setResult({
+        ...resultData,
+        confidence: fixedConfidence,
+        description: fixedDescription,
+      });
     } catch (err: any) {
-      console.error("Error Flow:", err);
+      console.error(err);
       setError(err.message || "Terjadi kesalahan sistem.");
+      toast.error(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -172,20 +198,19 @@ export default function PredictPage() {
           Deteksi Penyakit Tanaman
         </h1>
         <p className='text-stone-500 text-lg'>
-          Upload foto daun tanaman padi Anda untuk mendapatkan diagnosa instan
-          dan solusi penanganannya.
+          Upload foto daun tanaman padi Anda untuk mendapatkan diagnosa instan.
         </p>
       </div>
 
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 items-start'>
-        <Card className='border-none shadow-xl bg-white/80 backdrop-blur-sm'>
+        <Card className='border-none shadow-xl bg-white/80 backdrop-blur-sm h-fit'>
           <CardHeader>
             <CardTitle className='text-xl flex items-center gap-2 text-stone-700'>
               <ScanSearch className='text-emerald-600' />
-              Upload Gambar
+              Area Upload
             </CardTitle>
             <CardDescription>
-              Format yang didukung: JPEG, PNG, JPG (Maks. 5MB)
+              Pastikan foto jelas dan fokus pada daun yang sakit.
             </CardDescription>
           </CardHeader>
 
@@ -197,7 +222,7 @@ export default function PredictPage() {
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
                 className={cn(
-                  "border-3 border-dashed rounded-[2rem] p-10 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 min-h-[320px] bg-stone-50",
+                  "border-3 border-dashed rounded-[2rem] p-10 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 min-h-[320px] bg-stone-50 group",
                   isDragging
                     ? "border-emerald-500 bg-emerald-50/50 scale-[1.01]"
                     : "border-stone-300 hover:border-emerald-400 hover:bg-emerald-50/30"
@@ -207,29 +232,28 @@ export default function PredictPage() {
                   type='file'
                   ref={fileInputRef}
                   className='hidden'
-                  accept='image/jpeg, image/png, image/jpg'
+                  accept='image/jpeg, image/png, image/jpg, image/webp'
                   onChange={handleFileSelect}
                 />
 
-                <div className='bg-white p-4 rounded-full mb-4 shadow-sm border border-stone-100'>
+                <div className='bg-white p-4 rounded-full mb-4 shadow-sm border border-stone-100 group-hover:scale-110 transition-transform'>
                   <Upload className='h-8 w-8 text-emerald-600' />
                 </div>
                 <p className='text-lg font-bold text-stone-700'>
-                  Klik atau drag & drop
+                  Klik atau Drag & Drop
                 </p>
                 <p className='text-sm text-stone-400 mt-2 text-center max-w-xs'>
-                  Upload foto daun dengan pencahayaan yang cukup agar hasil
-                  prediksi akurat.
+                  JPG, PNG, WEBP (Max 5MB)
                 </p>
               </div>
             ) : (
-              <div className='relative rounded-[2rem] overflow-hidden border border-stone-200 shadow-sm bg-stone-50 group'>
-                <div className='relative w-full h-[320px]'>
+              <div className='relative rounded-[2rem] overflow-hidden border border-stone-200 shadow-sm bg-stone-100 group'>
+                <div className='relative w-full h-[350px]'>
                   <Image
                     src={selectedImage}
                     alt='Preview'
                     fill
-                    className='object-contain p-2'
+                    className='object-contain p-4'
                   />
                 </div>
                 <div className='absolute top-4 right-4 z-10'>
@@ -240,7 +264,7 @@ export default function PredictPage() {
                     className='rounded-full shadow-lg w-10 h-10 hover:scale-110 transition-transform'
                     disabled={isLoading}
                   >
-                    <X className='h-5 w-5' />
+                    <Trash2 className='h-5 w-5' />
                   </Button>
                 </div>
               </div>
@@ -259,12 +283,12 @@ export default function PredictPage() {
               {isLoading ? (
                 <div className='flex items-center gap-2'>
                   <Loader2 className='h-5 w-5 animate-spin' />
-                  Sedang Menganalisa...
+                  Menganalisis Daun...
                 </div>
               ) : (
                 <div className='flex items-center gap-2'>
                   <ScanSearch className='h-5 w-5' />
-                  Analisa Sekarang
+                  Mulai Diagnosa
                 </div>
               )}
             </Button>
@@ -291,7 +315,7 @@ export default function PredictPage() {
                 <div className='absolute top-0 left-0 w-full h-full bg-white/10 skew-y-6 transform origin-bottom-left' />
                 <h3 className='font-bold text-xl flex items-center justify-center gap-2 relative z-10'>
                   <CheckCircle2 className='h-7 w-7' />
-                  Hasil Analisa Selesai
+                  Diagnosa Selesai
                 </h3>
               </div>
 
@@ -303,18 +327,25 @@ export default function PredictPage() {
                   <h2 className='text-4xl font-extrabold text-stone-800 leading-tight'>
                     {result.label}
                   </h2>
-                  <div className='inline-flex items-center gap-2 px-4 py-1.5 bg-emerald-100 text-emerald-800 rounded-full text-sm font-semibold shadow-sm'>
-                    Tingkat Keyakinan: {result.confidence}%
+                  <div
+                    className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold shadow-sm ${
+                      result.confidence > 80
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-amber-100 text-amber-800"
+                    }`}
+                  >
+                    Akurasi Prediksi: {result.confidence.toFixed(3)}%
                   </div>
                 </div>
 
                 <div className='w-full h-px bg-stone-100' />
+
                 <div className='space-y-6'>
                   <div>
                     <h4 className='font-bold text-stone-700 mb-2 flex items-center gap-2'>
-                      📋 Deskripsi
+                      📋 Penjelasan
                     </h4>
-                    <p className='text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-2xl border border-stone-100'>
+                    <p className='text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-2xl border border-stone-100 text-sm md:text-base'>
                       {result.description}
                     </p>
                   </div>
@@ -323,7 +354,7 @@ export default function PredictPage() {
                     <h4 className='font-bold text-amber-700 mb-2 flex items-center gap-2'>
                       💡 Solusi Rekomendasi
                     </h4>
-                    <div className='bg-amber-50 p-5 rounded-2xl border border-amber-100 text-amber-900/90 leading-relaxed text-sm shadow-sm'>
+                    <div className='bg-amber-50 p-5 rounded-2xl border border-amber-100 text-amber-900/90 leading-relaxed text-sm md:text-base shadow-sm'>
                       {result.solution}
                     </div>
                   </div>
@@ -339,10 +370,11 @@ export default function PredictPage() {
                 </div>
                 <div>
                   <p className='text-lg font-semibold text-stone-500'>
-                    Belum ada data
+                    Menunggu Gambar
                   </p>
-                  <p className='text-sm'>
-                    Silakan upload gambar untuk melihat hasil prediksi.
+                  <p className='text-sm max-w-[200px] mx-auto'>
+                    Hasil diagnosa, deskripsi penyakit, dan solusi akan muncul
+                    di sini.
                   </p>
                 </div>
               </div>
@@ -350,14 +382,15 @@ export default function PredictPage() {
           )}
 
           {isLoading && !result && (
-            <Card className='border-none shadow-lg bg-white/80 p-8 rounded-[2.5rem] space-y-4 animate-pulse'>
+            <Card className='border-none shadow-lg bg-white/80 p-8 rounded-[2.5rem] space-y-6 animate-pulse'>
               <div className='h-8 bg-stone-200 rounded-full w-3/4 mx-auto' />
-              <div className='h-4 bg-stone-100 rounded-full w-1/2 mx-auto' />
+              <div className='h-6 bg-stone-100 rounded-full w-1/2 mx-auto' />
               <div className='h-px bg-stone-100 my-6' />
-              <div className='space-y-2'>
-                <div className='h-4 bg-stone-200 rounded-full w-full' />
-                <div className='h-4 bg-stone-100 rounded-full w-5/6' />
-                <div className='h-4 bg-stone-100 rounded-full w-4/6' />
+              <div className='space-y-4'>
+                <div className='h-4 bg-stone-200 rounded-full w-1/4' />
+                <div className='h-24 bg-stone-100 rounded-2xl w-full' />
+                <div className='h-4 bg-stone-200 rounded-full w-1/4 mt-4' />
+                <div className='h-32 bg-stone-100 rounded-2xl w-full' />
               </div>
             </Card>
           )}
