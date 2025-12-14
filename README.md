@@ -1,189 +1,177 @@
-🌾 AgriSmart - Solusi Pertanian Cerdas Berbasis AI
+# 🌾 AgriSmart - Solusi Pertanian Cerdas Berbasis AI
 
-AgriSmart adalah platform Smart Farming terintegrasi yang dirancang untuk memberdayakan petani padi di Indonesia dengan teknologi modern. Aplikasi ini menggabungkan kecerdasan buatan (AI) untuk deteksi penyakit tanaman, pemantauan cuaca real-time, dan manajemen keuangan usaha tani dalam satu dashboard yang intuitif dan responsif.
+![AgriSmart Banner](public/img/logo2.png)
 
-Sobat Petani Masa Kini: Pantau lahan, cegah penyakit, dan kelola keuntungan dengan lebih cerdas.
+**AgriSmart** adalah platform _Smart Farming_ terintegrasi yang memberdayakan petani padi dengan teknologi Kecerdasan Buatan (AI). Aplikasi ini membantu petani mendeteksi penyakit tanaman secara dini, memantau kondisi cuaca lokal, dan mengelola keuangan usaha tani dalam satu _dashboard_ yang mudah digunakan.
 
-✨ Fitur Unggulan
+Proyek ini menggabungkan kekuatan **Deep Learning** untuk analisis citra dan **Web Development Modern** untuk pengalaman pengguna yang responsif.
 
-1. 🤖 Deteksi Penyakit Tanaman (AI)
+---
 
-Diagnosa Instan: Menggunakan Machine Learning untuk mengidentifikasi penyakit pada daun padi (seperti Hawar Daun, Blast, Bercak Coklat) hanya dari foto.
+## ✨ Fitur Unggulan
 
-Tingkat Akurasi: Menampilkan confidence score (tingkat keyakinan) dari hasil prediksi.
+### 1. 🤖 Deteksi Penyakit Tanaman (AI)
+* Menggunakan model **EfficientNet** yang dilatih untuk mengenali penyakit padi seperti:
+    * *Bacterial Leaf Blight* (Hawar Daun Bakteri)
+    * *Brown Spot* (Bercak Coklat)
+    * *Leaf Blast* (Blast Daun)
+    * *Leaf Smut* (Gosong Daun)
+* Menampilkan tingkat akurasi (Confidence Score) hingga **3 angka desimal**.
+* Memberikan solusi penanganan dan rekomendasi obat sesuai penyakit yang terdeteksi.
 
-Solusi & Penanganan: Memberikan deskripsi penyakit dan rekomendasi tindakan atau obat yang diperlukan.
+### 2. 🌦️ Pemantauan Cuaca & Peta
+* Integrasi data cuaca *real-time* (Suhu, Kelembaban, Angin).
+* Peta interaktif untuk melihat kondisi lahan dan cuaca sekitar.
 
-Riwayat Scan: Semua hasil scan tersimpan otomatis di database untuk pemantauan jangka panjang.
+### 3. 💰 Manajemen Keuangan Tani
+* Pencatatan arus kas (Pemasukan & Pengeluaran).
+* Kalkulasi otomatis total saldo dan keuntungan.
+* Riwayat transaksi yang tersimpan aman di database.
 
-2. 🌦️ Pemantauan Cuaca & Lahan
+### 4. 📊 Dashboard & Riwayat
+* Pusat kontrol untuk melihat ringkasan aktivitas pertanian.
+* Penyimpanan riwayat *scan* penyakit lengkap dengan foto dan tanggal.
 
-Cuaca Real-time: Integrasi dengan OpenWeatherMap untuk menampilkan suhu, kelembaban, kecepatan angin, dan kondisi langit saat ini.
+---
 
-Prakiraan Cuaca: Prediksi cuaca per 3 jam untuk membantu perencanaan waktu tanam atau penyemprotan.
+## 🛠️ Tech Stack
 
-Peta Interaktif: Visualisasi lokasi lahan menggunakan Leaflet maps.
+### Frontend (Web Application)
+* **Framework:** [Next.js 16](https://nextjs.org/) (App Router)
+* **Language:** TypeScript
+* **Styling:** Tailwind CSS v4
+* **UI Library:** Shadcn UI, Lucide React
+* **Mapping:** Leaflet / React-Leaflet
+* **Charts:** Recharts
+* **Notifications:** Sonner
 
-3. 💰 Manajemen Keuangan Tani
+### Backend (AI Service)
+* **Framework:** Python Flask
+* **Machine Learning:** TensorFlow / Keras (EfficientNetB0)
+* **Utilities:** NumPy, Pillow (PIL), Requests
 
-Pencatatan Transaksi: Catat pemasukan (hasil panen) dan pengeluaran (pupuk, bibit, upah) dengan mudah.
+### Infrastructure & Data
+* **Database:** [Supabase](https://supabase.com/) (PostgreSQL)
+* **Storage:** Supabase Storage (untuk menyimpan gambar hasil scan)
+* **Auth:** NextAuth.js (via Supabase Adapter)
+* **Deployment:** Vercel (Frontend) & Hugging Face Spaces (Backend AI)
 
-Ringkasan Saldo: Kalkulasi otomatis total keuntungan dan arus kas.
+---
 
-Analisis Visual: Grafik tren pemasukan vs pengeluaran (direncanakan).
+## 🚀 Panduan Instalasi (Lokal)
 
-4. 📊 Dashboard Terintegrasi
+Ikuti langkah ini untuk menjalankan proyek di komputer Anda.
 
-Pusat kontrol yang menampilkan ringkasan aktivitas hari ini.
+### Prasyarat
+* Node.js (versi 18 atau terbaru)
+* Python (versi 3.9 atau terbaru)
+* Akun Supabase (untuk database & storage)
 
-Statistik frekuensi penyakit yang terdeteksi di lahan.
-
-Akses cepat ke fitur-fitur utama.
-
-5. 🔐 Keamanan & Profil
-
-Sistem autentikasi aman menggunakan NextAuth.js (Email/Password & Google OAuth).
-
-Manajemen profil pengguna.
-
-🛠️ Teknologi yang Digunakan
-
-Proyek ini dibangun menggunakan tech stack modern untuk performa tinggi dan pengalaman pengembang yang baik.
-
-Frontend
-
-Framework: Next.js 16 (App Router)
-
-Language: TypeScript
-
-Styling: Tailwind CSS v4
-
-UI Components: Shadcn UI (Radix UI)
-
-Icons: Lucide React, React Icons
-
-Charts: Recharts
-
-Maps: React Leaflet
-
-Notifications: Sonner
-
-Backend & Services
-
-Database: Supabase (PostgreSQL)
-
-Auth: NextAuth.js v5 (Beta) / Auth.js
-
-Storage: Supabase Storage (untuk menyimpan gambar hasil scan)
-
-AI Service (External): Python Flask API (TensorFlow/Keras Model)
-
-Weather API: OpenWeatherMap
-
-🚀 Panduan Instalasi (Lokal)
-
-Ikuti langkah-langkah berikut untuk menjalankan proyek ini di komputer Anda.
-
-Prasyarat
-
-Node.js (Versi 18 atau lebih baru)
-
-npm atau yarn/pnpm
-
-Akun Supabase (untuk Database & Auth)
-
-API Key OpenWeatherMap
-
-Backend Python (dijalankan terpisah, lihat folder backend jika ada)
-
-1. Clone Repository
-
+### Langkah 1: Clone Repository
+```bash
 git clone [https://github.com/username-anda/agrismart.git](https://github.com/username-anda/agrismart.git)
 cd agrismart
 
+```
 
-2. Install Dependencies
+###Langkah 2: Setup Backend (Python)Buka terminal baru, masuk ke folder backend.
 
+```bash
+cd backend
+
+# (Opsional) Buat virtual environment
+python -m venv venv
+# Aktifkan venv (Windows: venv\Scripts\activate | Mac/Linux: source venv/bin/activate)
+
+# Install dependensi
+pip install flask flask-cors tensorflow numpy pillow requests
+
+# Jalankan Server Flask
+python app.py
+
+```
+
+*Server AI akan berjalan di `http://127.0.0.1:8000*`
+
+###Langkah 3: Setup Frontend (Next.js)Kembali ke root folder proyek di terminal terpisah.
+
+```bash
+# Install dependensi Node modules
 npm install
-# atau
-pnpm install
 
+```
 
-3. Konfigurasi Environment Variables
+Buat file `.env.local` di root folder dan isi konfigurasi berikut:
 
-Buat file .env.local di root folder proyek dan salin konfigurasi berikut. Isi dengan kredensial Anda.
+```env
+# --- Supabase Config ---
+NEXT_PUBLIC_SUPABASE_URL="[https://project-id.supabase.co](https://project-id.supabase.co)"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key-here"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key-here"
 
-# --- Supabase Configuration ---
-# Dapatkan di Project Settings > API
-NEXT_PUBLIC_SUPABASE_URL="[https://your-project-id.supabase.co](https://your-project-id.supabase.co)"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
-SUPABASE_SERVICE_ROLE_KEY="your-service-role-key" # Hati-hati, jangan commit ini ke public repo!
+# --- NextAuth Config ---
+AUTH_SECRET="random-string-generate-via-openssl" 
+# (Generate via terminal: openssl rand -base64 32)
 
-# --- NextAuth Configuration ---
-# Generate secret dengan: openssl rand -base64 32
-AUTH_SECRET="your-generated-secret-string"
-AUTH_URL="http://localhost:3000" # Atau domain production
+# --- API Config ---
+# Gunakan localhost jika menjalankan python lokal, atau URL Hugging Face jika sudah deploy
+NEXT_PUBLIC_API_URL="[http://127.0.0.1:8000](http://127.0.0.1:8000)"
 
-# Google OAuth (Opsional, jika menggunakan login Google)
-AUTH_GOOGLE_ID="your-google-client-id"
-AUTH_GOOGLE_SECRET="your-google-client-secret"
+```
 
-# --- External APIs ---
-# URL Backend Python (Flask) untuk prediksi AI
-NEXT_PUBLIC_API_URL="[http://127.0.0.1:5000](http://127.0.0.1:5000)" 
-
-# OpenWeatherMap API Key
-NEXT_PUBLIC_OPENWEATHER_API_KEY="your-openweathermap-api-key"
-
-
-4. Setup Database (Supabase)
-
-Pastikan Anda telah membuat tabel-tabel berikut di Supabase (SQL Editor):
-
-users: Menyimpan data pengguna.
-
-scan_history: Menyimpan riwayat scan (kolom: id, user_id, image_url, label, confidence, description, solution, created_at).
-
-transactions: Menyimpan data keuangan (kolom: id, user_id, description, amount, type, date, created_at).
-
-Catatan: Pastikan Row Level Security (RLS) diaktifkan dan policy diatur agar pengguna hanya bisa mengakses data mereka sendiri.
-
-5. Jalankan Aplikasi
-
+###Langkah 4: Jalankan Aplikasi```bash
 npm run dev
 
+```
 
-Buka browser dan akses http://localhost:3000.
+Buka browser dan akses **[http://localhost:3000](https://www.google.com/search?q=http://localhost:3000)**.
 
-📂 Struktur Proyek
+---
 
-Berikut adalah gambaran struktur folder utama proyek AgriSmart:
-
+##📂 Struktur Proyek```
 agrismart/
-├── public/                 # Aset statis (gambar, icon, svg)
+├── public/                   # Aset Statis (Gambar, Icon)
 ├── src/
-│   ├── app/                # Next.js App Router (Pages & Layouts)
-│   │   ├── actions/        # Server Actions (Interaksi database server-side)
-│   │   ├── api/            # API Routes (NextAuth handler)
-│   │   ├── dashboard/      # Halaman Dashboard Utama
-│   │   ├── keuangan/       # Halaman Manajemen Keuangan
-│   │   ├── login/          # Halaman Login
-│   │   ├── penyakit/       # Halaman Riwayat & Detail Penyakit
-│   │   ├── prediction/     # Halaman Scan AI
-│   │   ├── profile/        # Halaman Profil User
-│   │   ├── register/       # Halaman Pendaftaran
-│   │   └── weather/        # Halaman Cuaca
-│   ├── components/         # Komponen UI Reusable
-│   │   ├── dashboard/      # Komponen khusus dashboard
-│   │   ├── ui/             # Komponen Shadcn UI (Button, Card, Input, dll)
-│   │   ├── weather/        # Komponen khusus cuaca
-│   │   └── ...             # Komponen global (Sidebar, Navbar)
-│   ├── hooks/              # Custom React Hooks
-│   ├── lib/                # Utilitas (utils.ts)
-│   ├── types/              # Definisi Tipe TypeScript
-│   ├── auth.ts             # Konfigurasi NextAuth
-│   └── middleware.ts       # Middleware proteksi rute
-├── .env.local              # Environment variables (tidak dicommit)
-├── next.config.ts          # Konfigurasi Next.js
-├── tailwind.config.ts      # Konfigurasi Tailwind (jika tidak menggunakan v4 native)
-└── package.json            # Daftar dependensi
+│   ├── app/                  # Next.js App Router
+│   │   ├── actions/          # Server Actions (Simpan History, dll)
+│   │   ├── dashboard/        # Halaman Dashboard Utama
+│   │   ├── keuangan/         # Fitur Keuangan
+│   │   ├── prediction/       # Fitur Scan & Upload Gambar
+│   │   ├── penyakit/         # Halaman Riwayat & Detail Penyakit
+│   │   └── weather/          # Halaman Cuaca
+│   ├── components/           # Komponen UI Reusable
+│   ├── lib/                  # Utilitas (utils.ts)
+│   └── types/                # Definisi Tipe TypeScript
+├── next.config.ts            # Konfigurasi Next.js
+└── package.json              # Dependensi Project
+
+```
+
+---
+
+##🤝 KontribusiKami sangat terbuka untuk kontribusi! Jika Anda ingin menambahkan fitur atau memperbaiki bug:
+
+1. **Fork** repositori ini.
+2. Buat **Branch** baru (`git checkout -b fitur-baru`).
+3. **Commit** perubahan Anda (`git commit -m 'Menambahkan fitur X'`).
+4. **Push** ke branch (`git push origin fitur-baru`).
+5. Buat **Pull Request** di GitHub.
+
+---
+
+##📄 LisensiProyek ini dilisensikan di bawah [MIT License](https://www.google.com/search?q=LICENSE). Bebas digunakan dan dimodifikasi untuk tujuan pendidikan dan pengembangan.
+
+---
+
+<p align="center">
+Dibuat dengan ❤️ untuk <b>Petani Indonesia</b>.
+
+
+
+
+AgriSmart Team © 2024
+</p>
+
+```
+
+```
