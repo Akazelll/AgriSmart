@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌾 AgriSmart - Asisten Pertanian Cerdas
 
-## Getting Started
+![AgriSmart Banner](public/img/logo2.png) 
+**AgriSmart** adalah platform _Smart Farming_ berbasis AI yang dirancang untuk membantu petani padi mendeteksi penyakit tanaman secara dini, memantau kondisi cuaca, dan mengelola keuangan tani dalam satu aplikasi terintegrasi.
 
-First, run the development server:
+Dengan memanfaatkan teknologi **Deep Learning (EfficientNet)**, aplikasi ini dapat mengidentifikasi penyakit seperti *Leaf Blast*, *Brown Spot*, dan *Bacterial Leaf Blight* hanya dengan mengunggah foto daun.
 
+---
+
+## ✨ Fitur Unggulan
+
+* **🤖 Deteksi Penyakit AI:** Diagnosa penyakit padi instan dengan akurasi tinggi dan rekomendasi penanganan yang tepat.
+* **🌦️ Info Cuaca & Peta:** Pemantauan cuaca *real-time* berbasis lokasi untuk perencanaan tanam yang lebih baik.
+* **💰 Manajemen Keuangan:** Pencatatan pemasukan dan pengeluaran tani untuk memantau keuntungan secara digital.
+* **📊 Dashboard Terintegrasi:** Pusat kontrol untuk melihat ringkasan aktivitas, riwayat scan, dan laporan cuaca.
+* **📱 Responsif & Modern:** Antarmuka pengguna yang bersih dan mudah digunakan di perangkat mobile maupun desktop.
+
+---
+
+## 🛠️ Teknologi yang Digunakan
+
+### Frontend (Web App)
+* **Framework:** [Next.js 16](https://nextjs.org/) (App Router)
+* **Language:** TypeScript
+* **Styling:** Tailwind CSS v4
+* **UI Components:** Shadcn UI, Lucide React
+* **Maps:** Leaflet / React-Leaflet
+* **Notifications:** Sonner
+
+### Backend (AI Service)
+* **Framework:** Python Flask
+* **Machine Learning:** TensorFlow / Keras (EfficientNetB0)
+* **Library Lain:** NumPy, Pillow, Requests
+
+### Infrastructure & Data
+* **Database & Storage:** [Supabase](https://supabase.com/) (PostgreSQL)
+* **Authentication:** NextAuth.js (via Supabase Adapter)
+* **Deployment:** Vercel (Frontend) & Hugging Face Spaces (Backend Model)
+
+---
+
+## 🚀 Cara Menjalankan Project (Lokal)
+
+Ikuti langkah-langkah berikut untuk menjalankan AgriSmart di komputer Anda.
+
+### Prasyarat
+* Node.js (v18+)
+* Python (v3.9+)
+* Akun Supabase (untuk database)
+
+### 1. Clone Repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+git clone [https://github.com/username-anda/agrismart.git](https://github.com/username-anda/agrismart.git)
+cd agrismart
