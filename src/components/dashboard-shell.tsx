@@ -6,7 +6,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FaRegCircleUser } from "react-icons/fa6";
-import { ChatBubble } from "@/components/chat-bubble";
 
 export async function DashboardShell({
   children,
@@ -90,7 +89,6 @@ export async function DashboardShell({
         </div>
       </main>
 
-      <ChatBubble />
     </SidebarProvider>
   );
 }
