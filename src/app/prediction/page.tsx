@@ -3,30 +3,26 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import {
-  Upload,
+  UploadCloud,
   X,
   Loader2,
-  ScanSearch,
   AlertCircle,
   CheckCircle2,
-  Leaf,
-  Trash2,
+  ScanLine,
+  Sprout,
+  Maximize2,
+  Droplets,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { createClient } from "@supabase/supabase-js";
 import { saveScanHistory } from "@/app/actions/save-history";
 import { toast } from "sonner";
 
-// Inisialisasi Supabase Client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -47,6 +43,8 @@ export default function PredictPage() {
   const [result, setResult] = useState<PredictionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [activeTab, setActiveTab] = useState<"upload" | "result">("upload");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -56,9 +54,7 @@ export default function PredictPage() {
   }, [selectedImage]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      processFile(e.target.files[0]);
-    }
+    if (e.target.files?.[0]) processFile(e.target.files[0]);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -74,20 +70,17 @@ export default function PredictPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processFile(e.dataTransfer.files[0]);
-    }
+    if (e.dataTransfer.files?.[0]) processFile(e.dataTransfer.files[0]);
   };
 
   const processFile = (file: File) => {
     const validTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
     if (!validTypes.includes(file.type)) {
-      toast.error("Format file tidak didukung. Gunakan JPG, PNG, atau WEBP.");
+      toast.error("Format file harus JPG, PNG, atau WEBP");
       return;
     }
-
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("File terlalu besar (Maksimal 5MB).");
+      toast.error("Ukuran file maksimal 5MB");
       return;
     }
 
@@ -96,7 +89,6 @@ export default function PredictPage() {
     setFile(file);
     setResult(null);
     setError(null);
-    toast.success("Foto berhasil dipilih.");
   };
 
   const handleRemoveImage = () => {
@@ -105,295 +97,319 @@ export default function PredictPage() {
     setFile(null);
     setResult(null);
     setError(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = async () => {
     if (!file) return;
-
     setIsLoading(true);
     setError(null);
 
+    if (window.innerWidth < 1024) {
+      setActiveTab("result");
+    }
+
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!apiUrl) {
-        throw new Error(
-          "Konfigurasi Error: NEXT_PUBLIC_API_URL belum disetting."
-        );
-      }
+      if (!apiUrl) throw new Error("API URL belum dikonfigurasi.");
 
       const fileExt = file.name.split(".").pop();
-      const sanitizedFileName = file.name
-        .replace(/[^a-zA-Z0-9]/g, "-")
-        .toLowerCase();
-      const fileName = `uploads/${Date.now()}-${sanitizedFileName}.${fileExt}`;
+      const fileName = `uploads/${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2, 9)}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("images")
         .upload(fileName, file, { cacheControl: "3600", upsert: false });
 
-      if (uploadError)
-        throw new Error("Gagal mengupload gambar ke penyimpanan.");
+      if (uploadError) throw new Error("Gagal upload gambar ke server.");
 
       const { data: publicUrlData } = supabase.storage
         .from("images")
         .getPublicUrl(fileName);
 
-      const publicUrl = publicUrlData.publicUrl;
-
       const response = await fetch(`${apiUrl}/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image_url: publicUrl }),
+        body: JSON.stringify({ image_url: publicUrlData.publicUrl }),
       });
 
       const resultData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(resultData.error || "Gagal memproses gambar di AI.");
-      }
+      if (!response.ok)
+        throw new Error(resultData.error || "Gagal memproses data.");
 
       const fixedConfidence = parseFloat(
-        Number(resultData.confidence).toFixed(3)
+        Number(resultData.confidence).toFixed(1)
       );
+      const fixedDescription = `Terdeteksi ${resultData.label} (${fixedConfidence}%)`;
 
-      const fixedDescription = `Terdeteksi sebagai ${resultData.label} dengan tingkat keyakinan ${fixedConfidence}%.`;
-
-      const saveResponse = await saveScanHistory({
-        imageUrl: publicUrl,
+      await saveScanHistory({
+        imageUrl: publicUrlData.publicUrl,
         label: resultData.label,
         confidence: fixedConfidence,
         description: fixedDescription,
         solution: resultData.solution,
       });
 
-      if (saveResponse?.error) {
-        toast.warning("Hasil muncul, namun gagal disimpan di riwayat.");
-      } else {
-        toast.success("Diagnosa selesai!");
-      }
-
-      // 5. Update State UI
       setResult({
         ...resultData,
         confidence: fixedConfidence,
         description: fixedDescription,
       });
+      toast.success("Diagnosa berhasil selesai!");
+
+      setActiveTab("result");
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Terjadi kesalahan sistem.");
-      toast.error(err.message);
+      toast.error("Gagal memproses permintaan.");
+      setActiveTab("upload");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className='flex flex-col gap-8 w-full max-w-5xl mx-auto pb-12 px-4 md:px-0'>
-      <div className='flex flex-col gap-2'>
-        <h1 className='text-3xl font-bold text-stone-800 flex items-center gap-2'>
-          <Leaf className='text-emerald-600' />
-          Deteksi Penyakit Tanaman
-        </h1>
-        <p className='text-stone-500 text-lg'>
-          Upload foto daun tanaman padi Anda untuk mendapatkan diagnosa instan.
-        </p>
-      </div>
+    <div className='min-h-screen bg-[#F5F5F4] p-4 md:p-8 font-sans text-stone-900 rounded-4xl'>
+      <div className='mx-auto max-w-6xl space-y-6'>
+        <div className='flex flex-col md:flex-row items-center justify-between gap-4 py-2'>
+          <div className='flex items-center gap-3'>
+            <div className='bg-emerald-600 p-2.5 rounded-xl text-white shadow-sm'>
+              <ScanLine className='w-6 h-6' />
+            </div>
+            <h1 className='text-2xl font-bold tracking-tight text-stone-800'>
+              Halaman Prediksi
+            </h1>
+          </div>
+          <div className='hidden md:flex gap-2'>
+            <Badge
+              variant='outline'
+              className='border-emerald-200 text-emerald-700 bg-emerald-50 px-3 py-1'
+            >
+              System Ready
+            </Badge>
+          </div>
+        </div>
 
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 items-start'>
-        <Card className='border-none shadow-xl bg-white/80 backdrop-blur-sm h-fit'>
-          <CardHeader>
-            <CardTitle className='text-xl flex items-center gap-2 text-stone-700'>
-              <ScanSearch className='text-emerald-600' />
-              Area Upload
-            </CardTitle>
-            <CardDescription>
-              Pastikan foto jelas dan fokus pada daun yang sakit.
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className='space-y-6'>
-            {!selectedImage ? (
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className={cn(
-                  "border-3 border-dashed rounded-[2rem] p-10 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 min-h-[320px] bg-stone-50 group",
-                  isDragging
-                    ? "border-emerald-500 bg-emerald-50/50 scale-[1.01]"
-                    : "border-stone-300 hover:border-emerald-400 hover:bg-emerald-50/30"
-                )}
-              >
-                <input
-                  type='file'
-                  ref={fileInputRef}
-                  className='hidden'
-                  accept='image/jpeg, image/png, image/jpg, image/webp'
-                  onChange={handleFileSelect}
-                />
-
-                <div className='bg-white p-4 rounded-full mb-4 shadow-sm border border-stone-100 group-hover:scale-110 transition-transform'>
-                  <Upload className='h-8 w-8 text-emerald-600' />
-                </div>
-                <p className='text-lg font-bold text-stone-700'>
-                  Klik atau Drag & Drop
-                </p>
-                <p className='text-sm text-stone-400 mt-2 text-center max-w-xs'>
-                  JPG, PNG, WEBP (Max 5MB)
-                </p>
-              </div>
-            ) : (
-              <div className='relative rounded-[2rem] overflow-hidden border border-stone-200 shadow-sm bg-stone-100 group'>
-                <div className='relative w-full h-[350px]'>
-                  <Image
-                    src={selectedImage}
-                    alt='Preview'
-                    fill
-                    className='object-contain p-4'
-                  />
-                </div>
-                <div className='absolute top-4 right-4 z-10'>
-                  <Button
-                    variant='destructive'
-                    size='icon'
-                    onClick={handleRemoveImage}
-                    className='rounded-full shadow-lg w-10 h-10 hover:scale-110 transition-transform'
-                    disabled={isLoading}
-                  >
-                    <Trash2 className='h-5 w-5' />
-                  </Button>
-                </div>
-              </div>
+        <div className='lg:hidden grid grid-cols-2 gap-1 p-1 bg-stone-200/50 rounded-xl'>
+          <button
+            onClick={() => setActiveTab("upload")}
+            className={cn(
+              "py-2.5 text-sm font-semibold rounded-lg transition-colors",
+              activeTab === "upload"
+                ? "bg-white text-stone-900 shadow-sm"
+                : "text-stone-500 hover:text-stone-700"
             )}
+          >
+            Upload
+          </button>
+          <button
+            onClick={() => setActiveTab("result")}
+            disabled={!result && !isLoading}
+            className={cn(
+              "py-2.5 text-sm font-semibold rounded-lg transition-colors",
+              activeTab === "result"
+                ? "bg-white text-stone-900 shadow-sm"
+                : "text-stone-500",
+              !result && !isLoading && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            Hasil
+          </button>
+        </div>
 
-            <Button
-              onClick={handleSubmit}
-              disabled={!selectedImage || isLoading}
+        <div className='bg-white/80 border border-white/50 rounded-[2.5rem] p-4 md:p-8 relative'>
+          <div className='grid grid-cols-1 lg:grid-cols-12 gap-8 items-start'>
+            <div
               className={cn(
-                "w-full rounded-full py-6 text-lg shadow-lg transition-all hover:scale-[1.02] font-bold",
-                isLoading
-                  ? "bg-stone-200 text-stone-500 cursor-not-allowed"
-                  : "bg-[#3A6F43] hover:bg-emerald-800 text-white"
+                "lg:col-span-5 space-y-6",
+                "lg:block",
+                activeTab === "upload" ? "block" : "hidden"
+              )}
+            >
+              <Card className='border-0 shadow-none bg-transparent'>
+                <CardHeader className='px-0 pt-0'>
+                  <CardTitle className='text-lg font-semibold text-stone-700 flex justify-between items-center'>
+                    Upload Foto
+                    <span className='text-xs font-normal text-stone-400 bg-white px-2 py-1 rounded-full border border-stone-200'>
+                      Langkah 1
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className='px-0 space-y-4'>
+                  <input
+                    type='file'
+                    ref={fileInputRef}
+                    className='hidden'
+                    accept='image/jpeg,image/png,image/webp'
+                    onChange={handleFileSelect}
+                  />
+
+                  {!selectedImage ? (
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={cn(
+                        "group relative border-2 border-dashed rounded-[2rem] h-80 flex flex-col items-center justify-center cursor-pointer transition-colors bg-white hover:border-emerald-400",
+                        isDragging
+                          ? "border-emerald-500 bg-emerald-50"
+                          : "border-stone-200"
+                      )}
+                    >
+                      <div className='p-4 bg-stone-50 rounded-full mb-4 group-hover:scale-105 transition-transform'>
+                        <UploadCloud className='w-8 h-8 text-stone-400 group-hover:text-emerald-600' />
+                      </div>
+                      <span className='text-sm font-bold text-stone-600'>
+                        Pilih File Gambar
+                      </span>
+                      <span className='text-xs text-stone-400 mt-1'>
+                        Maksimal 5MB
+                      </span>
+                    </div>
+                  ) : (
+                    <div className='relative rounded-[2rem] overflow-hidden border border-stone-100 bg-white h-80 group shadow-sm'>
+                      <Image
+                        src={selectedImage}
+                        alt='Preview'
+                        fill
+                        priority
+                        className='object-contain p-4'
+                      />
+                      <Button
+                        size='icon'
+                        variant='destructive'
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveImage();
+                        }}
+                        className='absolute top-4 right-4 rounded-full w-10 h-10 shadow-sm hover:scale-105 transition-transform'
+                      >
+                        <X className='w-5 h-5' />
+                      </Button>
+                    </div>
+                  )}
+
+                  <Button
+                    className={cn(
+                      "w-full h-14 rounded-2xl text-base font-bold shadow-sm transition-all",
+                      isLoading
+                        ? "bg-stone-100 text-stone-400 shadow-none"
+                        : "bg-stone-900 hover:bg-emerald-700 text-white"
+                    )}
+                    disabled={!selectedImage || isLoading}
+                    onClick={handleSubmit}
+                  >
+                    {isLoading ? (
+                      <span className='flex items-center gap-2'>
+                        <Loader2 className='h-5 w-5 animate-spin' />
+                        Memproses...
+                      </span>
+                    ) : (
+                      <span className='flex items-center gap-2'>
+                        Mulai Analisis
+                      </span>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {error && (
+                <Alert
+                  variant='destructive'
+                  className='bg-red-50 border-none text-red-600 rounded-2xl'
+                >
+                  <AlertCircle className='h-4 w-4' />
+                  <AlertTitle className='font-bold'>Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+
+            <div
+              className={cn(
+                "lg:col-span-7 h-full",
+                "lg:block",
+                activeTab === "result" ? "block" : "hidden"
               )}
             >
               {isLoading ? (
-                <div className='flex items-center gap-2'>
-                  <Loader2 className='h-5 w-5 animate-spin' />
-                  Menganalisis Daun...
-                </div>
-              ) : (
-                <div className='flex items-center gap-2'>
-                  <ScanSearch className='h-5 w-5' />
-                  Mulai Diagnosa
-                </div>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className='space-y-6'>
-          {error && (
-            <Alert
-              variant='destructive'
-              className='bg-red-50 border-red-200 text-red-800 rounded-2xl animate-in fade-in slide-in-from-top-2'
-            >
-              <AlertCircle className='h-5 w-5' />
-              <AlertTitle className='font-bold ml-2'>
-                Gagal Memproses
-              </AlertTitle>
-              <AlertDescription className='ml-2 mt-1'>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {result ? (
-            <Card className='border-none shadow-xl bg-white/90 backdrop-blur-md overflow-hidden rounded-[2.5rem] animate-in fade-in slide-in-from-bottom-8 duration-700'>
-              <div className='bg-emerald-600 p-6 text-white text-center relative overflow-hidden'>
-                <div className='absolute top-0 left-0 w-full h-full bg-white/10 skew-y-6 transform origin-bottom-left' />
-                <h3 className='font-bold text-xl flex items-center justify-center gap-2 relative z-10'>
-                  <CheckCircle2 className='h-7 w-7' />
-                  Diagnosa Selesai
-                </h3>
-              </div>
-
-              <CardContent className='p-8 space-y-8'>
-                <div className='text-center space-y-3'>
-                  <p className='text-xs font-bold text-stone-400 uppercase tracking-widest'>
-                    Penyakit Terdeteksi
+                <div className='h-full min-h-[400px] flex flex-col items-center justify-center text-center p-8 bg-stone-50 rounded-[2rem] border border-stone-100'>
+                  <Loader2 className='w-10 h-10 text-emerald-600 animate-spin mb-4' />
+                  <p className='text-stone-500 font-medium'>
+                    Sedang menganalisis...
                   </p>
-                  <h2 className='text-4xl font-extrabold text-stone-800 leading-tight'>
-                    {result.label}
-                  </h2>
-                  <div
-                    className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold shadow-sm ${
-                      result.confidence > 80
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-amber-100 text-amber-800"
-                    }`}
-                  >
-                    Akurasi Prediksi: {result.confidence.toFixed(3)}%
-                  </div>
                 </div>
-
-                <div className='w-full h-px bg-stone-100' />
-
+              ) : result ? (
                 <div className='space-y-6'>
-                  <div>
-                    <h4 className='font-bold text-stone-700 mb-2 flex items-center gap-2'>
-                      📋 Penjelasan
-                    </h4>
-                    <p className='text-stone-600 leading-relaxed bg-stone-50 p-4 rounded-2xl border border-stone-100 text-sm md:text-base'>
-                      {result.description}
-                    </p>
+                  <div className='bg-stone-900 text-white rounded-[2rem] overflow-hidden relative shadow-lg p-6 md:p-8'>
+                    <div className='flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2'>
+                      <CheckCircle2 className='w-4 h-4' />
+                      Selesai
+                    </div>
+                    <h2 className='text-3xl md:text-4xl font-bold leading-tight mb-6'>
+                      {result.label}
+                    </h2>
+
+                    <div className='space-y-3'>
+                      <div className='flex justify-between text-sm text-stone-400 font-medium'>
+                        <span>Tingkat Akurasi</span>
+                        <span className='text-emerald-400'>
+                          {result.confidence}%
+                        </span>
+                      </div>
+                      <div className='h-2 w-full bg-white/10 rounded-full overflow-hidden'>
+                        <div
+                          className='h-full bg-emerald-500 rounded-full'
+                          style={{ width: `${result.confidence}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <h4 className='font-bold text-amber-700 mb-2 flex items-center gap-2'>
-                      💡 Solusi Rekomendasi
-                    </h4>
-                    <div className='bg-amber-50 p-5 rounded-2xl border border-amber-100 text-amber-900/90 leading-relaxed text-sm md:text-base shadow-sm'>
-                      {result.solution}
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                    <div className='bg-white p-6 rounded-[2rem] shadow-sm border border-stone-100'>
+                      <div className='w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mb-4 text-blue-600'>
+                        <Maximize2 className='w-5 h-5' />
+                      </div>
+                      <h3 className='font-bold text-stone-800 mb-2'>
+                        Gejala Terdeteksi
+                      </h3>
+                      <p className='text-stone-600 text-sm leading-relaxed'>
+                        {result.description}
+                      </p>
+                    </div>
+
+                    <div className='bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100/50'>
+                      <div className='w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center mb-4 text-emerald-600'>
+                        <Sprout className='w-5 h-5' />
+                      </div>
+                      <h3 className='font-bold text-stone-800 mb-2'>
+                        Solusi Perawatan
+                      </h3>
+                      <p className='text-stone-700 text-sm leading-relaxed font-medium'>
+                        {result.solution}
+                      </p>
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ) : (
-            !isLoading &&
-            !error && (
-              <div className='h-full min-h-[400px] flex flex-col items-center justify-center text-stone-400 border-3 border-dashed border-stone-200 rounded-[2.5rem] bg-white/40 p-8 text-center space-y-4'>
-                <div className='bg-white p-6 rounded-full shadow-sm'>
-                  <ScanSearch className='h-16 w-16 text-stone-300' />
-                </div>
-                <div>
-                  <p className='text-lg font-semibold text-stone-500'>
-                    Menunggu Gambar
-                  </p>
-                  <p className='text-sm max-w-[200px] mx-auto'>
-                    Hasil diagnosa, deskripsi penyakit, dan solusi akan muncul
-                    di sini.
+              ) : (
+                <div className='h-full min-h-[400px] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-stone-200 rounded-[2rem] bg-stone-50/50'>
+                  <div className='bg-white p-5 rounded-full shadow-sm mb-4'>
+                    <Droplets className='w-8 h-8 text-stone-300' />
+                  </div>
+                  <h3 className='text-lg font-bold text-stone-700'>
+                    Area Hasil
+                  </h3>
+                  <p className='text-stone-400 text-sm max-w-xs mt-1'>
+                    Hasil prediksi dan solusi akan muncul di sini setelah proses
+                    upload selesai.
                   </p>
                 </div>
-              </div>
-            )
-          )}
-
-          {isLoading && !result && (
-            <Card className='border-none shadow-lg bg-white/80 p-8 rounded-[2.5rem] space-y-6 animate-pulse'>
-              <div className='h-8 bg-stone-200 rounded-full w-3/4 mx-auto' />
-              <div className='h-6 bg-stone-100 rounded-full w-1/2 mx-auto' />
-              <div className='h-px bg-stone-100 my-6' />
-              <div className='space-y-4'>
-                <div className='h-4 bg-stone-200 rounded-full w-1/4' />
-                <div className='h-24 bg-stone-100 rounded-2xl w-full' />
-                <div className='h-4 bg-stone-200 rounded-full w-1/4 mt-4' />
-                <div className='h-32 bg-stone-100 rounded-2xl w-full' />
-              </div>
-            </Card>
-          )}
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

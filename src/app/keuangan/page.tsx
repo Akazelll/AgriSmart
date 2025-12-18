@@ -1,10 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Wallet,
   TrendingUp,
@@ -17,12 +13,17 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
 } from "lucide-react";
+import { toast } from "sonner";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   getTransactions,
   addTransaction,
   deleteTransaction,
 } from "@/app/actions/finance";
-import { toast } from "sonner";
 
 type Transaction = {
   id: number;
@@ -33,16 +34,17 @@ type Transaction = {
 };
 
 export default function KeuanganPage() {
+  // --- State ---
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // State Form
+  // Form State
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"income" | "expense">("income");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 1. Fetch Data
+  // --- Effect: Fetch Data ---
   useEffect(() => {
     async function loadData() {
       try {
@@ -58,7 +60,7 @@ export default function KeuanganPage() {
     loadData();
   }, []);
 
-  // 2. Kalkulasi
+  // --- Calculations ---
   const totalIncome = transactions
     .filter((t) => t.type === "income")
     .reduce((acc, curr) => acc + curr.amount, 0);
@@ -78,7 +80,7 @@ export default function KeuanganPage() {
     }).format(number);
   };
 
-  // 3. Handle Add
+  // --- Handlers ---
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description || !amount) {
@@ -106,7 +108,6 @@ export default function KeuanganPage() {
     setIsSubmitting(false);
   };
 
-  // 4. Handle Delete
   const handleDelete = async (id: number) => {
     const promise = new Promise(async (resolve, reject) => {
       const prevData = [...transactions];
@@ -128,9 +129,10 @@ export default function KeuanganPage() {
     });
   };
 
+  // --- Render ---
   return (
-    <div className='flex flex-col space-y-6 pb-20 w-full max-w-full overflow-hidden'>
-      {/* HEADER */}
+    <div className='flex flex-col space-y-6 pb-20 w-full max-w-full overflow-hidden min-h-screen bg-[#F8FAF8] p-4 md:p-8 font-sans rounded-4xl'>
+      {/* Header Section */}
       <div className='px-1'>
         <h1 className='text-2xl md:text-3xl font-bold text-stone-800'>
           Manajemen Keuangan
@@ -140,8 +142,9 @@ export default function KeuanganPage() {
         </p>
       </div>
 
-      {/* RINGKASAN SALDO */}
+      {/* Summary Cards */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+        {/* Card: Total Saldo */}
         <Card className='bg-white border-stone-200 shadow-sm'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4'>
             <CardTitle className='text-sm font-medium text-stone-500'>
@@ -163,6 +166,7 @@ export default function KeuanganPage() {
           </CardContent>
         </Card>
 
+        {/* Card: Pemasukan */}
         <Card className='bg-white border-stone-200 shadow-sm'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4'>
             <CardTitle className='text-sm font-medium text-stone-500'>
@@ -186,6 +190,7 @@ export default function KeuanganPage() {
           </CardContent>
         </Card>
 
+        {/* Card: Pengeluaran */}
         <Card className='bg-white border-stone-200 shadow-sm'>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4'>
             <CardTitle className='text-sm font-medium text-stone-500'>
@@ -211,7 +216,7 @@ export default function KeuanganPage() {
       </div>
 
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8'>
-        {/* FORM INPUT */}
+        {/* Left Column: Form Input */}
         <div className='lg:col-span-1 order-2 lg:order-1'>
           <Card className='border-stone-200 shadow-md'>
             <CardHeader className='px-4 py-4 md:px-6 md:py-6'>
@@ -258,14 +263,11 @@ export default function KeuanganPage() {
                       type='button'
                       onClick={() => setType("income")}
                       disabled={isSubmitting}
-                      className={`
-                        flex items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200
-                        ${
-                          type === "income"
-                            ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm ring-1 ring-emerald-500 font-semibold"
-                            : "bg-white border-stone-200 text-stone-500 hover:bg-stone-50 hover:border-stone-300"
-                        }
-                      `}
+                      className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200 ${
+                        type === "income"
+                          ? "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm ring-1 ring-emerald-500 font-semibold"
+                          : "bg-white border-stone-200 text-stone-500 hover:bg-stone-50 hover:border-stone-300"
+                      }`}
                     >
                       <ArrowUpCircle
                         size={18}
@@ -282,14 +284,11 @@ export default function KeuanganPage() {
                       type='button'
                       onClick={() => setType("expense")}
                       disabled={isSubmitting}
-                      className={`
-                        flex items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200
-                        ${
-                          type === "expense"
-                            ? "bg-rose-50 border-rose-500 text-rose-700 shadow-sm ring-1 ring-rose-500 font-semibold"
-                            : "bg-white border-stone-200 text-stone-500 hover:bg-stone-50 hover:border-stone-300"
-                        }
-                      `}
+                      className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200 ${
+                        type === "expense"
+                          ? "bg-rose-50 border-rose-500 text-rose-700 shadow-sm ring-1 ring-rose-500 font-semibold"
+                          : "bg-white border-stone-200 text-stone-500 hover:bg-stone-50 hover:border-stone-300"
+                      }`}
                     >
                       <ArrowDownCircle
                         size={18}
@@ -320,7 +319,7 @@ export default function KeuanganPage() {
           </Card>
         </div>
 
-        {/* LIST RIWAYAT */}
+        {/* Right Column: Transaction List */}
         <div className='lg:col-span-2 order-1 lg:order-2'>
           <Card className='border-stone-200 shadow-sm h-full max-h-[600px] flex flex-col'>
             <CardHeader className='px-4 py-4 md:px-6 md:py-6 border-b border-stone-100'>

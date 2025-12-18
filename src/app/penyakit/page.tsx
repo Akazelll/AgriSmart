@@ -74,7 +74,7 @@ export default async function PenyakitPage({
   };
 
   return (
-    <div className='min-h-screen bg-[#F8FAF8] p-4 md:p-8 font-sans'>
+    <div className='min-h-screen bg-[#F8FAF8] p-4 md:p-8 font-sans rounded-4xl'>
       <div className='max-w-7xl mx-auto space-y-8'>
         <div className='flex flex-col md:flex-row md:items-end justify-between gap-4'>
           <div>
