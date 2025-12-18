@@ -2,19 +2,20 @@ import { auth } from "@/auth";
 import { createClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import {
   ScanSearch,
   History,
   ArrowRight,
-  Sprout,
   AlertCircle,
   TrendingUp,
+  TrendingDown,
+  Wallet,
 } from "lucide-react";
-import Image from "next/image";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { DiseaseChart } from "@/components/dashboard/disease-chart";
-// 1. IMPORT KOMPONEN BARU
 import { DashboardWeatherCard } from "@/components/dashboard/weather-card";
 
 export default async function DashboardPage() {
@@ -29,18 +30,21 @@ export default async function DashboardPage() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
+  // Fetch User Data
   const { data: user } = await supabase
     .from("users")
     .select("name")
     .eq("email", session.user.email)
     .single();
 
+  // Fetch All History for Chart
   const { data: allHistory } = await supabase
     .from("scan_history")
     .select("label, created_at")
     .eq("user_id", session.user.id)
     .order("created_at", { ascending: false });
 
+  // Fetch Recent History (Limit 3)
   const { data: recentHistory } = await supabase
     .from("scan_history")
     .select("*")
@@ -48,6 +52,35 @@ export default async function DashboardPage() {
     .order("created_at", { ascending: false })
     .limit(3);
 
+  // --- LOGIC BARU: Fetch Transactions ---
+  const { data: transactions } = await supabase
+    .from("transactions")
+    .select("amount, type")
+    .eq("user_id", session.user.id);
+
+  // Hitung Keuangan
+  const totalIncome =
+    transactions
+      ?.filter((t) => t.type === "income")
+      .reduce((acc, curr) => acc + curr.amount, 0) || 0;
+
+  const totalExpense =
+    transactions
+      ?.filter((t) => t.type === "expense")
+      .reduce((acc, curr) => acc + curr.amount, 0) || 0;
+
+  const currentBalance = totalIncome - totalExpense;
+
+  const formatRupiah = (number: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(number);
+  };
+  // --------------------------------------
+
+  // Calculate Chart Data
   const diseaseCounts: Record<string, number> = {};
 
   allHistory?.forEach((item) => {
@@ -70,8 +103,8 @@ export default async function DashboardPage() {
   const totalScan = allHistory?.length || 0;
 
   return (
-    <div className='flex min-h-screen w-full flex-col space-y-8 pb-10'>
-      <div className='flex flex-col gap-2'>
+    <div className='min-h-screen bg-[#F8FAF8] p-4 md:p-8 font-sans rounded-4xl'>
+      <div className='flex flex-col gap-2 mb-6'>
         <h1 className='text-3xl font-bold text-stone-800'>
           Halo, {user?.name || "Petani Cerdas"}! 👋
         </h1>
@@ -80,11 +113,12 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-        {/* 2. GANTI CARD CUACA LAMA DENGAN COMPONENT BARU */}
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
+        {/* Weather Card */}
         <DashboardWeatherCard />
 
-        <Card className='bg-gradient-to-br from-emerald-600 to-emerald-700 border-none text-white shadow-lg relative overflow-hidden'>
+        {/* Scan Action Card */}
+        <Card className='bg-gradient-to-br from-emerald-600 to-emerald-700 border-none text-white shadow-lg relative overflow-hidden flex flex-col justify-between'>
           <div className='absolute top-0 right-0 p-4 opacity-20'>
             <ScanSearch size={100} />
           </div>
@@ -110,33 +144,49 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className='bg-white border-stone-200 shadow-sm'>
+        {/* Financial Summary Card (NEW DYNAMIC CONTENT) */}
+        <Card className='bg-white border-stone-200 shadow-sm flex flex-col justify-between'>
           <CardHeader className='pb-2'>
             <CardTitle className='text-stone-700 font-medium text-lg flex items-center gap-2'>
-              <Sprout size={20} className='text-emerald-600' /> Status Lahan
+              <Wallet size={20} className='text-stone-500' /> Keuangan
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='space-y-3'>
-              <div className='flex justify-between items-center text-sm border-b border-stone-100 pb-2'>
-                <span className='text-stone-500'>Kesehatan</span>
-                <span className='text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded'>
-                  Baik
-                </span>
+            <div className='space-y-4'>
+              <div>
+                <p className='text-xs text-stone-500 font-medium uppercase tracking-wider'>
+                  Saldo Saat Ini
+                </p>
+                <div className='text-2xl font-bold text-stone-800 mt-1 truncate'>
+                  {formatRupiah(currentBalance)}
+                </div>
               </div>
-              <div className='flex justify-between items-center text-sm border-b border-stone-100 pb-2'>
-                <span className='text-stone-500'>Irigasi</span>
-                <span className='text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded'>
-                  Cukup
-                </span>
+
+              <div className='grid grid-cols-2 gap-4 pt-2 border-t border-stone-100'>
+                <div className='flex flex-col'>
+                  <span className='text-[10px] text-stone-400 flex items-center gap-1'>
+                    <TrendingUp size={12} className='text-emerald-500' /> Masuk
+                  </span>
+                  <span className='font-semibold text-emerald-600 text-sm truncate'>
+                    {formatRupiah(totalIncome)}
+                  </span>
+                </div>
+                <div className='flex flex-col'>
+                  <span className='text-[10px] text-stone-400 flex items-center gap-1'>
+                    <TrendingDown size={12} className='text-rose-500' /> Keluar
+                  </span>
+                  <span className='font-semibold text-rose-600 text-sm truncate'>
+                    {formatRupiah(totalExpense)}
+                  </span>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Bagian Bawah Tetap Sama */}
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
+        {/* Disease Trend Chart */}
         <div className='lg:col-span-2 space-y-4'>
           <div className='flex items-center justify-between'>
             <h2 className='text-xl font-bold text-stone-800 flex items-center gap-2'>
@@ -158,6 +208,7 @@ export default async function DashboardPage() {
           )}
         </div>
 
+        {/* Recent History */}
         <div className='lg:col-span-1 space-y-4'>
           <div className='flex items-center justify-between'>
             <h2 className='text-xl font-bold text-stone-800 flex items-center gap-2'>
