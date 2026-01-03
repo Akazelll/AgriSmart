@@ -1,14 +1,15 @@
 "use client";
 
 import * as React from "react";
-import { Bar, BarChart, CartesianGrid, XAxis, LabelList } from "recharts";
+import { TrendingUp } from "lucide-react";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+} from "recharts";
+import { Card, CardHeader } from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
@@ -18,11 +19,8 @@ import {
 
 const chartConfig = {
   count: {
-    label: "Jumlah Scan",
-    color: "hsl(var(--chart-1))",
-  },
-  label: {
-    color: "hsl(var(--background))",
+    label: "Kasus",
+    color: "#10b981",
   },
 } satisfies ChartConfig;
 
@@ -30,87 +28,130 @@ interface DiseaseChartProps {
   data: {
     disease: string;
     count: number;
-    fill: string;
   }[];
+  totalScan: number;
 }
 
-export function DiseaseChart({ data }: DiseaseChartProps) {
-  const [activeChart, setActiveChart] =
-    React.useState<keyof typeof chartConfig>("count");
+// Helper penyingkat label
+function shortLabel(val: string) {
+  if (val.length > 15) {
+    return val.split(" ").slice(0, 2).join(" ");
+  }
+  return val;
+}
 
-  const total = React.useMemo(
-    () => data.reduce((acc, curr) => acc + curr.count, 0),
-    [data]
-  );
+export function DiseaseChart({ data, totalScan }: DiseaseChartProps) {
+  const { chartData, topDisease, maxCount } = React.useMemo(() => {
+    // Sorting data agar Radar Chart terlihat rapi
+    const sortedData = [...data].sort((a, b) =>
+      a.disease.localeCompare(b.disease)
+    );
+
+    const max = sortedData.reduce((m, x) => Math.max(m, x.count), 0);
+    const sortedByCount = [...sortedData].sort((a, b) => b.count - a.count);
+    const top = sortedByCount[0]?.count > 0 ? sortedByCount[0] : null;
+
+    return { chartData: sortedData, topDisease: top, maxCount: max };
+  }, [data]);
+
+  const topPct =
+    topDisease && totalScan > 0
+      ? Math.round((topDisease.count / totalScan) * 100)
+      : 0;
 
   return (
-    <Card className='flex flex-col border-stone-200 shadow-sm'>
-      <CardHeader className='flex flex-col items-stretch space-y-0 border-b border-stone-100 p-0 sm:flex-row'>
-        <div className='flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6'>
-          <CardTitle>Statistik Penyakit</CardTitle>
-          <CardDescription>
-            Frekuensi penyakit yang terdeteksi pada lahan Anda.
-          </CardDescription>
+    <Card className='flex flex-col h-full w-full border-stone-200 shadow-sm rounded-xl overflow-hidden bg-white'>
+      {/* Header Compact */}
+      <CardHeader className='flex flex-row items-center justify-between space-y-0 px-4 py-3 border-b border-stone-100 bg-stone-50/40'>
+        <div className='flex items-center gap-2'>
+          <div className='p-1.5 bg-white border border-stone-100 rounded-md shadow-sm hidden sm:block'>
+            <TrendingUp size={14} className='text-emerald-600' />
+          </div>
+          <div>
+            <h3 className='text-sm font-bold text-stone-700 leading-tight'>
+              Peta Sebaran
+            </h3>
+            <p className='text-[10px] text-stone-400 font-medium'>
+              Data Real-time
+            </p>
+          </div>
         </div>
-        <div className='flex'>
-          <div className='relative z-30 flex flex-1 flex-col justify-center gap-1 border-t border-stone-100 bg-stone-50/50 px-6 py-4 text-left sm:border-l sm:border-t-0 sm:px-8 sm:py-6'>
-            <span className='text-xs text-stone-500'>Total Scan</span>
-            <span className='text-lg font-bold leading-none sm:text-3xl'>
-              {total.toLocaleString()}
+
+        <div className='text-right'>
+          <div className='inline-flex items-center justify-center rounded-md bg-white border border-stone-200 px-2 py-1 shadow-sm'>
+            <span className='text-xs font-bold text-stone-800'>
+              {totalScan}{" "}
+              <span className='text-[10px] text-stone-400 font-normal ml-0.5'>
+                Scan
+              </span>
             </span>
           </div>
         </div>
       </CardHeader>
-      <CardContent className='px-2 sm:p-6'>
-        <ChartContainer
-          config={chartConfig}
-          className='aspect-auto h-[250px] w-full'
-        >
-          <BarChart
-            accessibilityLayer
-            data={data}
-            margin={{
-              left: 12,
-              right: 12,
-              top: 20,
-            }}
+
+      {/* FIXED: Hapus class 'opacity-0' dan animasi CSS manual yang bikin bug */}
+      <div className='flex-1 w-full relative min-h-[300px]'>
+        {chartData.length > 0 ? (
+          <ChartContainer
+            config={chartConfig}
+            className='mx-auto w-full h-full absolute inset-0'
           >
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey='disease'
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              tickFormatter={(value) => {
-                return value.length > 10 ? value.slice(0, 10) + "..." : value;
-              }}
-            />
-            <ChartTooltip
-              cursor={false}
-              content={
-                <ChartTooltipContent
-                  className='w-[180px]'
-                  nameKey='count'
-                  labelKey='disease'
-                />
-              }
-            />
-            <Bar
-              dataKey='count'
-              fill='var(--color-count)'
-              radius={[8, 8, 0, 0]}
-            >
-              <LabelList
-                dataKey='count'
-                position='top'
-                offset={12}
-                className='fill-foreground'
-                fontSize={12}
+            <RadarChart data={chartData} outerRadius='60%'>
+              <PolarGrid className='stroke-stone-200' gridType='circle' />
+
+              <PolarAngleAxis
+                dataKey='disease'
+                tick={{ fill: "#78716c", fontSize: 10, fontWeight: 600 }}
+                tickFormatter={shortLabel}
               />
-            </Bar>
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
+
+              <PolarRadiusAxis
+                angle={90}
+                domain={[0, Math.max(1, maxCount)]}
+                tick={false}
+                axisLine={false}
+              />
+
+              <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    indicator='line'
+                    className='bg-white/95 backdrop-blur border-stone-200 text-xs shadow-md'
+                  />
+                }
+              />
+
+              <Radar
+                name='Kasus'
+                dataKey='count'
+                stroke='#10b981'
+                strokeWidth={2.5}
+                fill='#10b981'
+                fillOpacity={0.25}
+                dot={{ r: 3, fill: "#10b981", strokeWidth: 0, fillOpacity: 1 }}
+                activeDot={{ r: 6, fill: "#047857", strokeWidth: 0 }}
+                // Animasi halus tetap ada, tapi dikontrol oleh Library Recharts (Lebih Aman)
+                isAnimationActive={true}
+                animationBegin={0}
+                animationDuration={1500}
+                animationEasing='ease-out'
+              />
+            </RadarChart>
+          </ChartContainer>
+        ) : (
+          <div className='flex flex-col items-center justify-center h-full text-stone-400'>
+            <p className='text-xs'>Belum ada data scan.</p>
+          </div>
+        )}
+
+        {topDisease && (
+          <div className='absolute bottom-3 right-3 text-[10px] bg-emerald-50/90 backdrop-blur border border-emerald-100 px-2 py-1 rounded-md text-emerald-700 shadow-sm'>
+            Dominan: <strong>{shortLabel(topDisease.disease)}</strong> ({topPct}
+            %)
+          </div>
+        )}
+      </div>
     </Card>
   );
 }
