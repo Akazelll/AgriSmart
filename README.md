@@ -1,177 +1,290 @@
-# 🌾 AgriSmart - Solusi Pertanian Cerdas Berbasis AI
+## 🤖 AI Backend — Hugging Face Spaces (Flask + EfficientNet)
 
-![AgriSmart Banner](public/img/logo2.png)
+Backend AI AgriSmart di-deploy menggunakan **Hugging Face Spaces** (SDK: **Docker**) dan menjalankan API **Flask** untuk inference model EfficientNet. :contentReference[oaicite:0]{index=0} :contentReference[oaicite:1]{index=1}
 
-**AgriSmart** adalah platform _Smart Farming_ terintegrasi yang memberdayakan petani padi dengan teknologi Kecerdasan Buatan (AI). Aplikasi ini membantu petani mendeteksi penyakit tanaman secara dini, memantau kondisi cuaca lokal, dan mengelola keuangan usaha tani dalam satu _dashboard_ yang mudah digunakan.
-
-Proyek ini menggabungkan kekuatan **Deep Learning** untuk analisis citra dan **Web Development Modern** untuk pengalaman pengguna yang responsif.
-
----
-
-## ✨ Fitur Unggulan
-
-### 1. 🤖 Deteksi Penyakit Tanaman (AI)
-* Menggunakan model **EfficientNet** yang dilatih untuk mengenali penyakit padi seperti:
-    * *Bacterial Leaf Blight* (Hawar Daun Bakteri)
-    * *Brown Spot* (Bercak Coklat)
-    * *Leaf Blast* (Blast Daun)
-    * *Leaf Smut* (Gosong Daun)
-* Menampilkan tingkat akurasi (Confidence Score) hingga **3 angka desimal**.
-* Memberikan solusi penanganan dan rekomendasi obat sesuai penyakit yang terdeteksi.
-
-### 2. 🌦️ Pemantauan Cuaca & Peta
-* Integrasi data cuaca *real-time* (Suhu, Kelembaban, Angin).
-* Peta interaktif untuk melihat kondisi lahan dan cuaca sekitar.
-
-### 3. 💰 Manajemen Keuangan Tani
-* Pencatatan arus kas (Pemasukan & Pengeluaran).
-* Kalkulasi otomatis total saldo dan keuntungan.
-* Riwayat transaksi yang tersimpan aman di database.
-
-### 4. 📊 Dashboard & Riwayat
-* Pusat kontrol untuk melihat ringkasan aktivitas pertanian.
-* Penyimpanan riwayat *scan* penyakit lengkap dengan foto dan tanggal.
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend (Web Application)
-* **Framework:** [Next.js 16](https://nextjs.org/) (App Router)
-* **Language:** TypeScript
-* **Styling:** Tailwind CSS v4
-* **UI Library:** Shadcn UI, Lucide React
-* **Mapping:** Leaflet / React-Leaflet
-* **Charts:** Recharts
-* **Notifications:** Sonner
-
-### Backend (AI Service)
-* **Framework:** Python Flask
-* **Machine Learning:** TensorFlow / Keras (EfficientNetB0)
-* **Utilities:** NumPy, Pillow (PIL), Requests
-
-### Infrastructure & Data
-* **Database:** [Supabase](https://supabase.com/) (PostgreSQL)
-* **Storage:** Supabase Storage (untuk menyimpan gambar hasil scan)
-* **Auth:** NextAuth.js (via Supabase Adapter)
-* **Deployment:** Vercel (Frontend) & Hugging Face Spaces (Backend AI)
-
----
-
-## 🚀 Panduan Instalasi (Lokal)
-
-Ikuti langkah ini untuk menjalankan proyek di komputer Anda.
-
-### Prasyarat
-* Node.js (versi 18 atau terbaru)
-* Python (versi 3.9 atau terbaru)
-* Akun Supabase (untuk database & storage)
-
-### Langkah 1: Clone Repository
-```bash
-git clone [https://github.com/username-anda/agrismart.git](https://github.com/username-anda/agrismart.git)
-cd agrismart
-
-```
-
-###Langkah 2: Setup Backend (Python)Buka terminal baru, masuk ke folder backend.
+### 📁 Struktur File (Hugging Face Spaces)
 
 ```bash
-cd backend
+.
+├── app.py                    # Flask API (endpoint / dan /predict)
+├── requirements.txt          # Dependency Python untuk runtime
+├── Dockerfile                # Config Spaces (sdk: docker)
+├── efficientnetb0_model.keras# Model hasil training (Keras)
+├── class_indices.json        # Mapping index -> nama kelas penyakit
+└── train_model.py            # Script training (opsional / lokal)
+app.py adalah entry utama API inference. 
+app
 
-# (Opsional) Buat virtual environment
-python -m venv venv
-# Aktifkan venv (Windows: venv\Scripts\activate | Mac/Linux: source venv/bin/activate)
 
-# Install dependensi
-pip install flask flask-cors tensorflow numpy pillow requests
+class_indices.json dipakai agar output model jadi label penyakit yang benar. 
+class_indices
 
-# Jalankan Server Flask
-python app.py
 
-```
+🔌 Endpoint API
+1) Health Check
+GET /
 
-*Server AI akan berjalan di `http://127.0.0.1:8000*`
+Mengembalikan status server + apakah model berhasil ke-load (berguna buat debugging). 
+app
 
-###Langkah 3: Setup Frontend (Next.js)Kembali ke root folder proyek di terminal terpisah.
 
-```bash
-# Install dependensi Node modules
-npm install
+Contoh respons:
 
-```
+model_ready
 
-Buat file `.env.local` di root folder dan isi konfigurasi berikut:
+tf_version
 
-```env
-# --- Supabase Config ---
-NEXT_PUBLIC_SUPABASE_URL="[https://project-id.supabase.co](https://project-id.supabase.co)"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key-here"
-SUPABASE_SERVICE_ROLE_KEY="your-service-role-key-here"
+model_file_size_mb
 
-# --- NextAuth Config ---
-AUTH_SECRET="random-string-generate-via-openssl" 
-# (Generate via terminal: openssl rand -base64 32)
+ERROR_MESSAGE
 
-# --- API Config ---
-# Gunakan localhost jika menjalankan python lokal, atau URL Hugging Face jika sudah deploy
-NEXT_PUBLIC_API_URL="[http://127.0.0.1:8000](http://127.0.0.1:8000)"
+2) Prediksi Penyakit
+POST /predict
 
-```
+Body (JSON):
 
-###Langkah 4: Jalankan Aplikasi```bash
-npm run dev
+json
+Salin kode
+{
+  "image_url": "https://....jpg"
+}
+Response (JSON):
 
-```
+label (nama penyakit)
 
-Buka browser dan akses **[http://localhost:3000](https://www.google.com/search?q=http://localhost:3000)**.
+confidence (persen)
 
----
+description
 
-##📂 Struktur Proyek```
-agrismart/
-├── public/                   # Aset Statis (Gambar, Icon)
-├── src/
-│   ├── app/                  # Next.js App Router
-│   │   ├── actions/          # Server Actions (Simpan History, dll)
-│   │   ├── dashboard/        # Halaman Dashboard Utama
-│   │   ├── keuangan/         # Fitur Keuangan
-│   │   ├── prediction/       # Fitur Scan & Upload Gambar
-│   │   ├── penyakit/         # Halaman Riwayat & Detail Penyakit
-│   │   └── weather/          # Halaman Cuaca
-│   ├── components/           # Komponen UI Reusable
-│   ├── lib/                  # Utilitas (utils.ts)
-│   └── types/                # Definisi Tipe TypeScript
-├── next.config.ts            # Konfigurasi Next.js
-└── package.json              # Dependensi Project
+solution
 
-```
+Endpoint ini melakukan download gambar dari image_url, resize ke 224x224, lalu inference dan mengembalikan rekomendasi solusi. 
+app
 
----
 
-##🤝 KontribusiKami sangat terbuka untuk kontribusi! Jika Anda ingin menambahkan fitur atau memperbaiki bug:
+🧪 Dependency (requirements.txt)
+Backend membutuhkan library berikut (Flask, TensorFlow CPU, Keras, Pillow, requests, dll). 
+requirements
 
-1. **Fork** repositori ini.
-2. Buat **Branch** baru (`git checkout -b fitur-baru`).
-3. **Commit** perubahan Anda (`git commit -m 'Menambahkan fitur X'`).
-4. **Push** ke branch (`git push origin fitur-baru`).
-5. Buat **Pull Request** di GitHub.
 
----
+⚙️ Catatan Deployment Spaces
+Aplikasi Flask berjalan pada port 7860 (default Spaces). 
+app
 
-##📄 LisensiProyek ini dilisensikan di bawah [MIT License](https://www.google.com/search?q=LICENSE). Bebas digunakan dan dimodifikasi untuk tujuan pendidikan dan pengembangan.
 
----
+app.py punya pengecekan ukuran file model untuk menghindari kasus Git LFS pointer (model palsu/rusak). 
+app
+
+
+🧠 Kelas Penyakit yang Didukung
+Model mengenali beberapa kelas berikut (sesuai mapping). 
+class_indices
+
+
+Bacterial Leaf Blight
+
+Brown Spot
+
+Healthy Rice Leaf
+
+Leaf Blast
+
+Leaf scald
+
+Narrow Brown Leaf Spot
+
+Neck_Blast
+
+Rice Hispa
+
+Sheath Blight
+
+markdown
+Salin kode
+
+Kalau kamu mau, aku juga bisa **benerin README utama kamu** biar ada:
+- link demo Spaces + badge “Hugging Face Spaces”
+- contoh request `curl` untuk `/predict`
+- diagram arsitektur (Next.js → API Spaces → response)  
+Tinggal bilang aja mau gaya yang “simple” atau “lebih showcase buat lomba/portfolio”.
+
+Sumber
+
+
+
+
+
+
+Anda bilang:
+buatkan saya readme untuk project front end terlebih dahulu yang baik dan benar
+
+
+ChatGPT bilang:
+md
+Salin kode
+# 🌾 AgriSmart Frontend — Smart Farming Dashboard (Next.js)
 
 <p align="center">
-Dibuat dengan ❤️ untuk <b>Petani Indonesia</b>.
-
-
-
-
-AgriSmart Team © 2024
+  <b>Frontend</b> untuk platform smart farming berbasis AI: deteksi penyakit padi, monitoring cuaca & peta, manajemen keuangan tani, dan dashboard riwayat — semuanya dalam UI modern & responsif.
 </p>
 
-```
+<p align="center">
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black?logo=next.js">
+  <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
+  <img alt="Tailwind" src="https://img.shields.io/badge/TailwindCSS-v4-38BDF8?logo=tailwindcss&logoColor=white">
+  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase&logoColor=white">
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg">
+</p>
 
-```
+---
+
+## ✨ Fitur Utama (Frontend)
+
+### 🤖 AI Disease Detection UI
+- Upload/scan foto daun padi
+- Tampilkan hasil prediksi:
+  - label penyakit
+  - **confidence hingga 3 angka desimal**
+  - rekomendasi solusi penanganan
+- Riwayat scan tersimpan (foto + tanggal)
+
+### 🌦️ Weather & Map
+- Cuaca real-time: suhu, kelembaban, kecepatan angin
+- Peta interaktif berbasis **Leaflet** (monitoring lokasi/lahan)
+
+### 💰 Manajemen Keuangan Tani
+- Input pemasukan & pengeluaran
+- Perhitungan otomatis saldo & estimasi keuntungan
+- Ringkasan di dashboard
+
+### 📊 Dashboard & Analytics
+- Grafik statistik aktivitas menggunakan **Recharts**
+- Tampilan dashboard modern (Shadcn UI + Tailwind)
+
+---
+
+## 🧱 Tech Stack
+
+**Frontend**
+- Next.js 16 (App Router)
+- React 19
+- Tailwind CSS v4
+- Shadcn UI, Lucide React
+- Recharts
+
+**Auth & Database**
+- Supabase (PostgreSQL)
+- NextAuth.js
+- Server Actions untuk operasi data
+
+**Integrasi API**
+- AI Backend (Flask) via `NEXT_PUBLIC_API_URL`
+
+---
+
+## 🗂️ Struktur Folder (Ringkas)
+
+```bash
+src/
+├─ app/            # routing utama (Dashboard, Keuangan, Prediksi, dll)
+├─ actions/        # server actions (CRUD Supabase)
+├─ components/     # UI reusable (charts, sidebar, weather, dsb)
+└─ lib/            # helper, konfigurasi, utilitas
+✅ Prasyarat
+Node.js v18+
+
+NPM / PNPM / Yarn (bebas, sesuaikan)
+
+Project Supabase (URL + Keys)
+
+AI Backend berjalan (lokal / HuggingFace Spaces)
+
+🚀 Setup & Run (Local)
+1) Clone Repo
+bash
+Salin kode
+git clone https://github.com/Akazelll/AgriSmart.git
+cd AgriSmart
+2) Install Dependencies
+bash
+Salin kode
+npm install
+3) Buat .env.local
+Buat file .env.local di root project:
+
+env
+Salin kode
+NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+
+# IMPORTANT: service role key hanya digunakan server-side
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+
+# NextAuth
+AUTH_SECRET="your-generated-secret"
+
+# AI Backend URL (lokal atau Spaces)
+NEXT_PUBLIC_API_URL="http://127.0.0.1:8000"
+4) Jalankan Dev Server
+bash
+Salin kode
+npm run dev
+Buka:
+
+http://localhost:3000
+
+🧪 Scripts
+bash
+Salin kode
+npm run dev       # start development
+npm run build     # build production
+npm run start     # start production server
+npm run lint      # lint check
+🔌 Konfigurasi Integrasi AI Backend
+Frontend akan mengirim request ke AI backend melalui:
+
+NEXT_PUBLIC_API_URL
+
+Contoh (konsep):
+
+upload foto → frontend mengirim ke backend (atau mengirim image_url tergantung implementasi)
+
+backend balikin label, confidence, solution
+
+frontend render hasil + simpan riwayat ke Supabase
+
+Pastikan URL backend tidak salah (lokal vs Spaces). Kalau backend down, UI bisa menampilkan state “failed / retry”.
+
+🔒 Security Notes (Penting)
+Jangan commit .env.local
+
+SUPABASE_SERVICE_ROLE_KEY itu super sensitif → pastikan hanya dipakai di server-side (Server Actions / route handler), jangan bocor ke client.
+
+🌍 Deployment
+Frontend direkomendasikan deploy di Vercel:
+
+Set environment variables di dashboard Vercel:
+
+NEXT_PUBLIC_SUPABASE_URL
+
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+SUPABASE_SERVICE_ROLE_KEY
+
+AUTH_SECRET
+
+NEXT_PUBLIC_API_URL
+
+🤝 Contributing
+Fork repo
+
+Buat branch: feat/nama-fitur
+
+Commit: git commit -m "feat: add ..."
+
+Push & buat Pull Request
+
+📄 License
+MIT License.
+
+<p align="center"> Dibuat dengan ❤️ untuk <b>Petani Indonesia</b><br/> AgriSmart Team © 2024 </p> ```
