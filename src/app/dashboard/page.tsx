@@ -81,7 +81,7 @@ export default async function DashboardPage() {
           {getGreeting()}, {user?.name || "Petani Cerdas"}! 👋
         </h1>
         <p className='text-stone-500 text-sm md:text-base'>
-          Ringkasan aktivitas pertanian Anda hari ini.
+          Rangkuman aktivitas pertanian Anda hari ini.
         </p>
       </div>
 
