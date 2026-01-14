@@ -1,7 +1,8 @@
+
 # 🌾 AgriSmart Frontend — Smart Farming Dashboard (Next.js)
 
 <p align="center">
-  <b>Frontend</b> untuk platform smart farming berbasis AI: deteksi penyakit padi, monitoring cuaca & peta, manajemen keuangan tani, dan dashboard riwayat — semuanya dalam UI modern & responsif.
+  <b>Frontend</b> untuk platform smart farming berbasis AI: deteksi penyakit padi, pemantauan cuaca & peta, manajemen keuangan tani, dan riwayat aktivitas — dalam UI yang modern, cepat, dan responsif.
 </p>
 
 <p align="center">
@@ -18,7 +19,7 @@
 
 ### 🤖 AI Disease Detection UI
 - Upload/scan foto daun padi
-- Tampilkan hasil prediksi:
+- Menampilkan hasil prediksi:
   - label penyakit
   - **confidence hingga 3 angka desimal**
   - rekomendasi solusi penanganan
@@ -26,16 +27,16 @@
 
 ### 🌦️ Weather & Map
 - Cuaca real-time: suhu, kelembaban, kecepatan angin
-- Peta interaktif berbasis **Leaflet** (monitoring lokasi/lahan)
+- Peta interaktif berbasis **Leaflet** untuk monitoring lokasi/lahan
 
 ### 💰 Manajemen Keuangan Tani
-- Input pemasukan & pengeluaran
+- Pencatatan pemasukan & pengeluaran
 - Perhitungan otomatis saldo & estimasi keuntungan
-- Ringkasan di dashboard
+- Ringkasan keuangan di dashboard
 
 ### 📊 Dashboard & Analytics
 - Grafik statistik aktivitas menggunakan **Recharts**
-- Tampilan dashboard modern (Shadcn UI + Tailwind)
+- UI modern dengan **Shadcn UI + Tailwind**
 
 ---
 
@@ -54,7 +55,7 @@
 - Server Actions untuk operasi data
 
 **Integrasi API**
-- AI Backend (Flask) via `NEXT_PUBLIC_API_URL`
+- AI Backend (Flask) melalui `NEXT_PUBLIC_API_URL`
 
 ---
 
@@ -62,33 +63,43 @@
 
 ```bash
 src/
-├─ app/            # routing utama (Dashboard, Keuangan, Prediksi, dll)
-├─ actions/        # server actions (CRUD Supabase)
-├─ components/     # UI reusable (charts, sidebar, weather, dsb)
+├─ app/            # routing utama aplikasi (Dashboard, Keuangan, Prediksi, dll)
+├─ actions/        # Server Actions (CRUD Supabase)
+├─ components/     # UI reusable (charts, sidebar, weather, dll)
 └─ lib/            # helper, konfigurasi, utilitas
+````
 
-✅ Prasyarat
+---
 
-Node.js v18+
+## ✅ Prasyarat
 
-NPM / PNPM / Yarn (bebas, sesuaikan)
+* Node.js **v18+**
+* NPM / PNPM / Yarn (bebas)
+* Project **Supabase** (URL + Keys)
+* AI Backend berjalan (lokal / Hugging Face Spaces)
 
-Project Supabase (URL + Keys)
+---
 
-AI Backend berjalan (lokal / HuggingFace Spaces)
+## 🚀 Setup & Run (Local)
 
-🚀 Setup & Run (Local)
-1) Clone Repo
+### 1) Clone Repo
+
+```bash
 git clone https://github.com/Akazelll/AgriSmart.git
 cd AgriSmart
+```
 
-2) Install Dependencies
+### 2) Install Dependencies
+
+```bash
 npm install
+```
 
-3) Buat .env.local
+### 3) Buat `.env.local`
 
-Buat file .env.local di root project:
+Buat file `.env.local` di root project:
 
+```env
 NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
 
@@ -100,71 +111,86 @@ AUTH_SECRET="your-generated-secret"
 
 # AI Backend URL (lokal atau Spaces)
 NEXT_PUBLIC_API_URL="http://127.0.0.1:8000"
+```
 
-4) Jalankan Dev Server
+### 4) Jalankan Dev Server
+
+```bash
 npm run dev
-
+```
 
 Buka:
 
-http://localhost:3000
+* `http://localhost:3000`
 
-🧪 Scripts
+---
+
+## 🧪 Scripts
+
+```bash
 npm run dev       # start development
 npm run build     # build production
 npm run start     # start production server
 npm run lint      # lint check
+```
 
-🔌 Konfigurasi Integrasi AI Backend
+---
+
+## 🔌 Integrasi AI Backend
 
 Frontend akan mengirim request ke AI backend melalui:
 
-NEXT_PUBLIC_API_URL
+* `NEXT_PUBLIC_API_URL`
 
-Contoh (konsep):
+Alur singkat:
 
-upload foto → frontend mengirim ke backend (atau mengirim image_url tergantung implementasi)
+1. User upload foto daun padi
+2. Frontend mengirim request ke backend (file / `image_url` sesuai implementasi)
+3. Backend mengembalikan `label`, `confidence`, `solution`
+4. Frontend menampilkan hasil + menyimpan riwayat ke Supabase
 
-backend balikin label, confidence, solution
+> Pastikan `NEXT_PUBLIC_API_URL` sesuai environment (lokal vs Spaces). Jika backend tidak tersedia, UI sebaiknya menampilkan state “failed / retry”.
 
-frontend render hasil + simpan riwayat ke Supabase
+---
 
-Pastikan URL backend tidak salah (lokal vs Spaces). Kalau backend down, UI bisa menampilkan state “failed / retry”.
+## 🔒 Security Notes
 
-🔒 Security Notes (Penting)
+* Jangan commit file `.env.local`
+* `SUPABASE_SERVICE_ROLE_KEY` **sangat sensitif** → gunakan hanya di server-side (Server Actions / route handler), jangan pernah dipakai di client.
 
-Jangan commit .env.local
+---
 
-SUPABASE_SERVICE_ROLE_KEY itu super sensitif → pastikan hanya dipakai di server-side (Server Actions / route handler), jangan bocor ke client.
+## 🌍 Deployment (Vercel)
 
-🌍 Deployment
+Deploy direkomendasikan menggunakan **Vercel**.
 
-Frontend direkomendasikan deploy di Vercel:
+Set environment variables di Vercel:
 
-Set environment variables di dashboard Vercel:
+* `NEXT_PUBLIC_SUPABASE_URL`
+* `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+* `SUPABASE_SERVICE_ROLE_KEY`
+* `AUTH_SECRET`
+* `NEXT_PUBLIC_API_URL`
 
-NEXT_PUBLIC_SUPABASE_URL
+---
 
-NEXT_PUBLIC_SUPABASE_ANON_KEY
+## 🤝 Contributing
 
-SUPABASE_SERVICE_ROLE_KEY
+1. Fork repo
+2. Buat branch: `feat/nama-fitur`
+3. Commit: `git commit -m "feat: add ..."`
+4. Push & buat Pull Request
 
-AUTH_SECRET
+---
 
-NEXT_PUBLIC_API_URL
-
-🤝 Contributing
-
-Fork repo
-
-Buat branch: feat/nama-fitur
-
-Commit: git commit -m "feat: add ..."
-
-Push & buat Pull Request
-
-📄 License
+## 📄 License
 
 MIT License.
 
-<p align="center"> Dibuat dengan ❤️ untuk <b>Petani Indonesia</b><br/> AgriSmart Team © 2024 </p> ```
+---
+
+<p align="center">
+  Dibuat dengan ❤️ untuk <b>Petani Indonesia</b><br/>
+  AgriSmart Team © 2024
+</p>
+```
