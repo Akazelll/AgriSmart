@@ -191,6 +191,5 @@ MIT License.
 
 <p align="center">
   Dibuat dengan ❤️ untuk <b>Petani Indonesia</b><br/>
-  AgriSmart Team © 2024
+  AgriSmart Team © 2025
 </p>
-```
